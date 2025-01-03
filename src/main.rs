@@ -1,19 +1,22 @@
 use clap::{Arg, App};
+use rustyline::error::ReadlineError;
+use rustyline::DefaultEditor;
+
 
 mod ace_machine;
 mod runner;
 
 // Welcome message
 const WELCOME: &str =
-"jaceforth: Jupiter Ace Emulator https://github.com/ivanizag/jaceforth";
+"jaceforth: Jupiter Ace Forth https://github.com/ivanizag/jaceforth";
+
+const INTRO: &str =
+"Enter Jupiter Ace Forth commands. Type control-C to exit.";
+
 
 fn main() {
     // Parse arguments
     let matches = App::new(WELCOME)
-        .arg(Arg::with_name("CMD")
-            .help("The binary image to run, usually a .COM file")
-            .required(false)
-            .index(1))
         .arg(Arg::with_name("cpu_trace")
             .short("c")
             .long("cpu-trace")
@@ -31,15 +34,48 @@ fn main() {
     let trace_cpu = matches.is_present("cpu_trace");
     let trace_io = matches.is_present("io_trace");
     let trace_rom = matches.is_present("rom_trace");
-    let command = match matches.value_of("CMD") {
-        Some(c) => c,
-        None => "",
-    };
+
+    println!("{}", WELCOME);
+    println!("{}", INTRO);
+    println!();
 
     let mut runner = runner::Runner::new(trace_cpu, trace_io, trace_rom);
-    println!("Command: {}", command);
     runner.prepare();
-    let (response, error_code) = runner.execute_command(command);
-    print!("Response: {}", response);
-    println!("Error code: {}", error_code);
+
+    let mut editor: DefaultEditor;
+    match DefaultEditor::new() {
+        Ok(e) => editor = e,
+        Err(err) => {
+            println!("Error creating the readline editor: {}", err);
+            return;
+        }
+    }
+    let _ = editor.load_history("history.txt");
+
+    loop {
+        let readline = editor.readline("jaceforth> ");
+        match readline {
+            Ok(line) => {
+                let _ = editor.add_history_entry(line.as_str());
+                let (response, error_code) = runner.execute_command(&line);
+                println!("{}", response);
+                if error_code != 0 {
+                    println!("Error code: {}", error_code);
+                }
+            },
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break
+            },
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break
+            },
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break
+            }
+        }
+    }
+    let _ = editor.save_history("history.txt");
 }
