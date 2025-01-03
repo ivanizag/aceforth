@@ -4,9 +4,10 @@ static ROM: &[u8] = include_bytes!("../resources/jupiter ace.rom");
 
 
 const INSCRN_ADDRESS: u16 = 0x3C1E;
-//const CURSOR_ADDRESS: u16 = 0x3C20;
-//const ENDBUF_ADDRESS: u16 = 0x3C22;
+const CURSOR_ADDRESS: u16 = 0x3C20;
+const ENDBUF_ADDRESS: u16 = 0x3C22;
 const ADDRESS_STATIN: u16 = 0x3c28;
+
 const STATIN_ENTER_MASK: u8 = 0b0010_0000;
 
 pub struct AceMachine {
@@ -21,24 +22,62 @@ impl AceMachine {
             trace_io,
         }
     }
-        
-    pub fn inject_command(&mut self, command: &str) {
 
-        /* print!("INSRSCRN: 0x{:04x}, ", machine.peek16(INSCRN_ADDRESS));
-        print!("CURSOR: 0x{:04x}, ", machine.peek16(CURSOR_ADDRESS));
-        println!("ENDBUF: 0x{:04x}", machine.peek16(ENDBUF_ADDRESS));
-        println!("Injecting: {}", command);
-        */
-        let mut cursor = self.peek16(INSCRN_ADDRESS) + 2;
-        for c in command.chars() {
-            self.poke(cursor, c as u8);
-            cursor += 1;
+    /*
+    pub fn dump_buffer_info(&self) {
+        let inscrn = self.peek16(INSCRN_ADDRESS);
+        let cursor = self.peek16(CURSOR_ADDRESS);
+        let endbuf = self.peek16(ENDBUF_ADDRESS);
+        println!("INSRSCRN: 0x{:04x}, ", inscrn);
+        println!("CURSOR: 0x{:04x}, ", cursor);
+        println!("ENDBUF: 0x{:04x}", endbuf);
+        let inscrn_char = self.peek(inscrn);
+        println!("Char at inscrn: {}, 0x{:02x}", (inscrn_char & 0x7f) as char, inscrn_char);
+        let cursor_char = self.peek(cursor);
+        println!("Char at cursor: {}, 0x{:02x}", (cursor_char & 0x7f) as char, cursor_char);
+
+        for i in inscrn..=(endbuf+5) {
+            let c = self.peek(i);
+            println!("at {:04x} {}, 0x{:02x}", i, (c&0x7f) as char, c);
         }
+    }
+    */
+
+    pub fn inject_command(&mut self, command: &str) {
+        let mut cursor = self.peek16(INSCRN_ADDRESS) + 1;
+        for c in command.chars() {
+            cursor += 1;
+            self.poke(cursor, c as u8);
+        }
+        cursor += 1;
         self.poke(cursor, 0x00);
-    
+        self.poke16(CURSOR_ADDRESS, self.peek16(INSCRN_ADDRESS) + 1);
+        self.poke16(ENDBUF_ADDRESS, cursor);
+
         let mut statin = self.peek(ADDRESS_STATIN);
         statin |= STATIN_ENTER_MASK;
         self.poke(ADDRESS_STATIN, statin);
+    }
+
+    pub fn extract_pending_input(&self) -> Option<String> {
+        let cursor = self.peek16(CURSOR_ADDRESS);
+        let endbuf = self.peek16(ENDBUF_ADDRESS);
+        let len = endbuf - cursor - 1;
+        if len == 0 {
+            return None;
+        }
+
+        assert!(self.peek(cursor) == '?' as u8 | 0x80); // Inverse question mark
+
+        let mut command = String::new();
+        for i in (cursor+1)..endbuf {
+            let c = self.peek(i);
+            if c == 0 {
+                break;
+            }
+            command.push(c as char);
+        }
+        Some(command)
     }
 }
 

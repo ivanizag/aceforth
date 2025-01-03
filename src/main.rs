@@ -52,14 +52,20 @@ fn main() {
     }
     let _ = editor.load_history("history.txt");
 
+    let mut pending_input: Option<String> = None;
     loop {
-        let readline = editor.readline("jaceforth> ");
+        let readline = match pending_input {
+            Some(input) => editor.readline_with_initial("jaceforth? ", (&input, "")),
+            None => editor.readline("jaceforth> ")
+        };
+
         match readline {
             Ok(line) => {
                 let _ = editor.add_history_entry(line.as_str());
-                let (response, error_code) = runner.execute_command(&line);
-                println!("{}", response);
-                if error_code != 0 {
+                let response = runner.execute_commands(&line);
+                println!("{}", response.output);
+                pending_input = response.pending_input;
+                if let Some(error_code) = response.error_code {
                     println!("Error code: {}", error_code);
                 }
             },

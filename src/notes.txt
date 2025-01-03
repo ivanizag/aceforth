@@ -1,0 +1,4 @@
+Commands:
+    VLIST: waits for a VSYNC using HALT: fixed.
+    BEEP: infinite loop
+    .S: does not display the stack
