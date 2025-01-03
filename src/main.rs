@@ -1,18 +1,11 @@
 use clap::{Arg, App};
-use iz80::*;
 
 mod ace_machine;
-
-use self::ace_machine::AceMachine;
+mod runner;
 
 // Welcome message
 const WELCOME: &str =
-"izace: Jupiter Ace Emulator https://github.com/ivanizag/izace";
-
-
-const ROM_EMIT_CHAR_ADDRESS: u16 = 0x0008;
-const WAIT_FOR_SYNC_HALT_ADDRESS: u16 = 0x0679;
-const QUERY_LOOP_ADDRESS: u16 = 0x059b;
+"jaceforth: Jupiter Ace Emulator https://github.com/ivanizag/jaceforth";
 
 fn main() {
     // Parse arguments
@@ -40,69 +33,13 @@ fn main() {
     let trace_rom = matches.is_present("rom_trace");
     let command = match matches.value_of("CMD") {
         Some(c) => c,
-        None => "1 2 3 4 5 + .",
+        None => "",
     };
 
-    // Init device
-    let mut machine = AceMachine::new(trace_io);
-    let mut cpu = Cpu::new_z80();
-    cpu.set_trace(trace_cpu);
-
-    // Start the cpu
-    println!("{}", WELCOME);
-
-
-    // Go to the query state
-    while cpu.registers().pc() != QUERY_LOOP_ADDRESS {
-        cpu.execute_instruction(&mut machine);
-    }
-
-    // Set command
+    let mut runner = runner::Runner::new(trace_cpu, trace_io, trace_rom);
     println!("Command: {}", command);
-    machine.inject_command(command);
-
-    // Run up to the query loop again
-    let mut response = String::new();
-    cpu.execute_instruction(&mut machine);
-    while cpu.registers().pc() != QUERY_LOOP_ADDRESS {
-        cpu.execute_instruction(&mut machine);
-
-        if cpu.is_halted() {
-            println!("HALT instruction that will never be interrupted");
-            break;
-        }
-
-        let mut pc = cpu.registers().pc();
-
-        // Hooks on the ROM code
-        match pc {
-            ROM_EMIT_CHAR_ADDRESS => {
-                response.push(cpu.registers().a() as char);
-            },
-            WAIT_FOR_SYNC_HALT_ADDRESS => {
-                // Skip the HALT instruction
-                pc += 1;
-                cpu.registers().set_pc(pc);
-            }
-            _ => {}
-        }
-
-        // Tracing the ROM calls
-        if trace_rom {
-            match pc {
-                0x0000 => println!("ROM RESET"),
-                0x0008 => println!("ROM EMIT CHAR {}-{}", cpu.registers().a() as char, cpu.registers().a()),
-                //0x0010 => println!("ROM PUSH DE"),
-                //0x0018 => println!("ROM POP DE"),
-                0x0022 => println!("ROM ERROR {}", cpu.registers().a()),
-                //0x0028 => println!("ROM FIND RAM END"),
-                0x0038 => println!("ROM VSYNC INT"),
-                _ => {}
-            }
-        }
-    }
-
-    response = response.replace("\r", "\n");
-
-    println!("Response: {}", response);
+    runner.prepare();
+    let (response, error_code) = runner.execute_command(command);
+    print!("Response: {}", response);
+    println!("Error code: {}", error_code);
 }
