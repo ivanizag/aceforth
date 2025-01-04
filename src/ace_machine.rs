@@ -8,6 +8,10 @@ const CURSOR_ADDRESS: u16 = 0x3C20;
 const ENDBUF_ADDRESS: u16 = 0x3C22;
 const ADDRESS_STATIN: u16 = 0x3c28;
 
+
+const START_OF_SCRREN: u16 = 0x2400;
+const END_OF_SCREEN: u16 = 0x2700;
+
 const STATIN_ENTER_MASK: u8 = 0b0010_0000;
 
 pub struct AceMachine {
@@ -67,17 +71,30 @@ impl AceMachine {
             return None;
         }
 
-        assert!(self.peek(cursor) == '?' as u8 | 0x80); // Inverse question mark
+        // on Edit there is no question mark
+        // assert!(self.peek(cursor) == '?' as u8 | 0x80); // Inverse question mark
 
         let mut command = String::new();
-        for i in (cursor+1)..endbuf {
+        for i in (cursor+1)..END_OF_SCREEN {
             let c = self.peek(i);
             if c == 0 {
-                break;
+                continue;
             }
             command.push(c as char);
         }
         Some(command)
+    }
+
+    pub fn get_screen_as_text(&self) -> String {
+        let mut screen = String::new();
+        for i in 0..(24*32) {
+            let c = self.ram[i + START_OF_SCRREN as usize];
+            screen.push_str(&ace_to_printable(c));
+            if i % 32 == 31 {
+                screen.push('\n');
+            }
+        }
+        screen
     }
 }
 
@@ -155,46 +172,43 @@ impl Machine for AceMachine {
     }
 }
 
+pub fn ace_to_unicode(code: u8) -> char {
+    let code = code & 0x7f;
 
+    match code {
+        0x00 => ' ',
+        0x01..=0x0f => char::from_u32(0x2400 + code as u32).unwrap(),
+        0x10 => '■',
+        0x11 => '▝',
+        0x12 => '▘',
+        0x13 => '▀',
+        0x14 => '▗',
+        0x15 => '▐',
+        0x16 => '▚',
+        0x17 => '▜',
+        0x18..=0x1f => char::from_u32(0x2400 + code as u32).unwrap(),
+        0x60 => '£',
+        0x7f => '©',
+        _ => code as char,
+    }
+}
 
-/*
-0000:           LHALF           EQU     03C24H  ; output field end 
-0000:           
-0000:           KEYCOD          EQU     03C26H  ; pressed key
-0000:           KEYCNT          EQU     03C27H  ; timer
-0000:           STATIN          EQU     03C28H  ; bit 0 release input
-0000:                                           ; bit 1 caps lock
-0000:                                           ; bit 2 graphics
-0000:                                           ; bit 3 inverse
-0000:                                           ; bit 5 "ENTER" pressed
-
-
-0000:           SCRPOS          EQU     03C1CH  ; output field cursor
-0000:           INSCRN          EQU     03C1EH  ; input field start 
-0000:           CURSOR          EQU     03C20H  ; input field cursor
-0000:           ENDBUF          EQU     03C22H  ; input field end
-
-
-
-Key processing in VSYNC interrupt:
-    if caps lock and a..=z AND 0x5F
-    if graphics: AND 0x9f (0b1001_1111)
-    if inverse: OR 0x80
-
-    if Control -> DOCTRL(A) + DCSETCUR
-    else       -> DCDCNORM(A)
-
-    DCDNORM stores the command in INSCRN?
-
-Input processing in 0x594: QSTART
-    Releases input: SET 0, STATIN
-                    RES 5, STATIN
-    Waits for enter: BIT 5, STATIN
-    Goes to DCCURDEL (delete char at cursor (the return?))
-        Reads char from CURSOR
-            DCGETCIN ( BC = ENDBUF-CURSOR+1 )
-        if not a 0 or at ENDBUF
-
-    GETSTRING (0x5DF) reads words from INSCRN
-
-*/
+pub fn ace_to_printable(code: u8) -> String {
+    match code {
+        0x90 => " ".to_string(),
+        0x91 => "▙".to_string(),
+        0x92 => "▟".to_string(),
+        0x93 => "▄".to_string(),
+        0x94 => "▛".to_string(),
+        0x95 => "▌".to_string(),
+        0x96 => "▞".to_string(),
+        0x97 => "▖".to_string(),
+        _ => {
+            if code & 0x80 != 0 {
+                format!("\x1b[7m{}\x1b[0m", ace_to_unicode(code))
+            } else {
+                ace_to_unicode(code).to_string()
+            }
+        }
+    }
+}

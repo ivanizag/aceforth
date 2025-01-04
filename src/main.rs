@@ -62,11 +62,19 @@ fn main() {
         match readline {
             Ok(line) => {
                 let _ = editor.add_history_entry(line.as_str());
-                let response = runner.execute_commands(&line);
+                let response = runner.execute(&line);
+
                 println!("{}", response.output);
                 pending_input = response.pending_input;
                 if let Some(error_code) = response.error_code {
                     println!("Error code: {}", error_code);
+                }
+                if let Some(screen) = response.screen {
+                    println!("----------------------------------");
+                    for line in screen.lines() {
+                        println!("|{}|", line);
+                    }
+                    println!("----------------------------------");
                 }
             },
             Err(ReadlineError::Interrupted) => {
