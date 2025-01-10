@@ -1,6 +1,15 @@
+use std::fs;
+use std::io;
+
+use miniz_oxide::deflate::compress_to_vec;
+use miniz_oxide::deflate::CompressionLevel;
+use miniz_oxide::inflate::decompress_to_vec_with_limit;
+
 use iz80::*;
 
 use super::ace_machine::AceMachine;
+
+static INITIAL_SNAPSHOT: &[u8] = include_bytes!("../resources/initialstate.sav");
 
 pub struct Runner {
     cpu: Cpu,
@@ -38,9 +47,14 @@ impl Runner {
     }
 
     pub fn prepare(&mut self) {
-        // Go to the query state
-        while self.cpu.registers().pc() != QUERY_LOOP_ADDRESS {
-            self.cpu.execute_instruction(&mut self.machine);
+
+        let res = self.load_snapshot_internal(INITIAL_SNAPSHOT);
+        if res.is_err() {
+            println!("Warning: Could not load initial state");
+            // Advance to the query state
+            while self.cpu.registers().pc() != QUERY_LOOP_ADDRESS {
+                self.cpu.execute_instruction(&mut self.machine);
+            }
         }
     }
 
@@ -83,20 +97,40 @@ impl Runner {
         let mut error_code = None;
         let mut screen = None;
 
-        let command = &command.to_uppercase();
+        let parts = command.split_whitespace().collect::<Vec<_>>();
+        let command = parts[0].to_uppercase();
 
-        if command.starts_with("DUMP") {
-            output = "".to_string();
-            screen = Some(self.machine.get_screen_as_text());
-        } else if command.starts_with("SCREEN") {
-            self.dump_screen = !self.dump_screen;
-            output = format!("Screen dumping is now {}", if self.dump_screen { "enabled" } else { "disabled" });
-        } else if command.starts_with("TRACE") {
-            self.trace_rom = !self.trace_rom;
-            output = format!("ROM tracing is now {}", if self.trace_rom { "enabled" } else { "disabled" });
-        } else {
-            error_code = Some(100);
-            output = format!("Unknown metacommand: {}", command);
+        match command.as_str() {
+            "DUMP" => {
+                output = "".to_string();
+                screen = Some(self.machine.get_screen_as_text());
+            },
+            "SCREEN" => {
+                self.dump_screen = !self.dump_screen;
+                output = format!("Screen dumping is now {}", if self.dump_screen { "enabled" } else { "disabled" });
+            },
+            "TRACE" => {
+                self.trace_rom = !self.trace_rom;
+                output = format!("ROM tracing is now {}", if self.trace_rom { "enabled" } else { "disabled" });
+            },
+            "SAVE" => {
+                let filename = parts.get(1).unwrap_or(&"snapshot.sav");
+                match self.save_snapshot(filename) {
+                    Ok(_) => output = format!("Snapshot saved to {}", filename),
+                    Err(e) => output = format!("Error saving snapshot: {}", e),
+                }
+            },
+            "LOAD" => {
+                let filename = parts.get(1).unwrap_or(&"snapshot.sav");
+                match self.load_snapshot(filename) {
+                    Ok(_) => output = format!("Snapshot loaded from {}", filename),
+                    Err(e) => output = format!("Error loading snapshot: {}", e),
+                }
+            },
+            _ => {
+               error_code = Some(100);
+                output = format!("Unknown metacommand: {}", command);
+            }
         }
 
         Response {
@@ -172,5 +206,39 @@ impl Runner {
             error_code,
             screen: None,
         }
+    }
+
+    pub fn save_snapshot(&self, filename: &str) -> io::Result<()> {
+        let mut state = self.machine.serialize();
+        state.extend(self.cpu.serialize());
+
+        for i in 0..state.len() {
+            state[i] = state[i].wrapping_sub(INITIAL_SNAPSHOT[i]);
+        }
+
+        let compressed = compress_to_vec(&state, CompressionLevel::DefaultLevel as u8);
+        fs::write(filename, compressed)
+    }
+
+    pub fn load_snapshot(&mut self, filename: &str) -> io::Result<()> {
+        let compressed = fs::read(filename)?;
+        let mut state = match decompress_to_vec_with_limit(&compressed, 100_0000) {
+            Ok(v) => v,
+            Err(e) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, e.to_string()));
+            }
+        };
+
+        for i in 0..state.len() {
+            state[i] = state[i].wrapping_add(INITIAL_SNAPSHOT[i]);
+        }
+        self.load_snapshot_internal(&state)?;
+        Ok(())
+    }
+
+    fn load_snapshot_internal(&mut self, state: &[u8]) -> io::Result<()> {
+        self.machine.deserialize(&state[..65536]);
+        self.cpu.deserialize(&state[65536..])?;
+        Ok(())
     }
 }

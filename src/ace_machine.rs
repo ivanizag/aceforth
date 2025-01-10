@@ -78,11 +78,12 @@ impl AceMachine {
         for i in (cursor+1)..END_OF_SCREEN {
             let c = self.peek(i);
             if c == 0 {
-                continue;
+                command.push('\n');
+            } else {
+                command.push(c as char);
             }
-            command.push(c as char);
         }
-        Some(command)
+        Some(command.trim_end().to_string())
     }
 
     pub fn get_screen_as_text(&self) -> String {
@@ -95,6 +96,14 @@ impl AceMachine {
             }
         }
         screen
+    }
+
+    pub fn serialize(&self) -> Vec<u8> {
+        self.ram.to_vec()
+    }
+
+    pub fn deserialize(&mut self, data: &[u8]) {
+        self.ram.copy_from_slice(data);
     }
 }
 

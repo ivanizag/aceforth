@@ -5,7 +5,8 @@ authors = ["Ivan Izaguirre <ivanizag@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-iz80 = "^0.3.5"
+iz80 = "^0.4.2"
 clap = "^2"
 rustyline = "15.0.0"
+miniz_oxide = "0.8.2"
 

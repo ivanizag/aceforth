@@ -2,18 +2,8 @@ Commands:
     VLIST: waits for a VSYNC using HALT: fixed.
     BEEP: infinite loop
     EDIT: to study: now only the first line can be edited.
+    LOAD
+    SAVE
 
-
-Example code:
-
-: A
-1 2 + .
-." Hola"
-;
-
-
-26e0
-26e5 next position of a char
-26e6 +1
 
 

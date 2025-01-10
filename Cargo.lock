@@ -3,6 +3,12 @@
 version = 3
 
 [[package]]
+name = "adler2"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
+
+[[package]]
 name = "ansi_term"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -123,9 +129,9 @@ dependencies = [
 
 [[package]]
 name = "iz80"
-version = "0.3.8"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0167ee8fbdcde00097b19605bb6d5328a49ddbb222209b1c00f97883193f561"
+checksum = "e1788e2d7cd0240a2a132d7790b389a2128099134fa7b99ccb12dea4694e990b"
 
 [[package]]
 name = "izace"
@@ -133,6 +139,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "iz80",
+ "miniz_oxide",
  "rustyline",
 ]
 
@@ -159,6 +166,15 @@ name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
+
+[[package]]
+name = "miniz_oxide"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ffbe83022cedc1d264172192511ae958937694cd57ce297164951b8b3568394"
+dependencies = [
+ "adler2",
+]
 
 [[package]]
 name = "nibble_vec"
