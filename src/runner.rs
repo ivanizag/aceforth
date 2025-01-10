@@ -9,6 +9,7 @@ use iz80::*;
 
 use super::ace_machine::AceMachine;
 use super::ace_machine::MAX_INPUT_BUFFER_SIZE;
+use super::ace_machine::ace_to_unicode;
 
 static INITIAL_SNAPSHOT: &[u8] = include_bytes!("../resources/initialstate.sav");
 
@@ -26,7 +27,7 @@ pub struct Response {
     pub screen: Option<String>,
 }
 
-const METACOMMAND_PREFIX: &str = "*";
+const METACOMMAND_PREFIX: &str = "$";
 
 const ROM_EMIT_CHAR_ADDRESS: u16 = 0x0008;
 const ROM_RAISE_ERROR_ADDRESS: u16 = 0x0022;
@@ -111,13 +112,17 @@ impl Runner {
     }
 
     const METACOMMANDS_HELP: &str = r##"
-{prefix}HELP: Shows this help
-{prefix}QUIT: Exits the emulator
-{prefix}SCREENSHOOT: Shows the current screen contents
-{prefix}SCREEN: Toggles screen dumping
-{prefix}TRACE: Toggles ROM tracing
-{prefix}SAVE [filename]: Saves a snapshot to a file
-{prefix}LOAD [filename]: Loads a snapshot from a file
+Type the same command you would type in the Jupitar ACE prompt.
+
+Additional metacommands are available starting with {prefix}:
+  {prefix}HELP: Shows this help
+  {prefix}QUIT: Exits the emulator
+  {prefix}SCREENSHOOT: Shows the current screen contents
+  {prefix}SCREEN: Toggles screen dumping
+  {prefix}TRACE: Toggles ROM tracing
+  {prefix}SAVE [filename]: Saves a snapshot to a file
+  {prefix}LOAD [filename]: Loads a snapshot from a file
+  {prefix}GRAPHS: Show the Jupiter Ace graphical characters for easy copy-pasting.
 "##;
 
     pub const ERROR_CODE_UNKNOWN_METACOMMAND: u8 = 100;
@@ -167,6 +172,9 @@ impl Runner {
                     Err(e) => output = format!("Error loading snapshot: {}", e),
                 }
             },
+            "GRAPHS" => {
+                output = "Graph characters: ■ ▝ ▘ ▀ ▗ ▐ ▚ ▜ ▙ ▟ ▄ ▛ ▌ ▞ ▖".to_string();
+            },
             _ => {
                error_code = Some(Self::ERROR_CODE_UNKNOWN_METACOMMAND);
                 output = format!("Unknown metacommand: {}", command);
@@ -182,8 +190,6 @@ impl Runner {
     }
 
     fn execute_command(&mut self, command: &str) -> Response {
-        println!("Command: {}", command);
-
         // Set command
         self.machine.inject_command(command);
 
@@ -208,7 +214,7 @@ impl Runner {
             // Hooks on the ROM code
             match pc {
                 ROM_EMIT_CHAR_ADDRESS => {
-                    output.push(self.cpu.registers().a() as char);
+                    output.push(ace_to_unicode(self.cpu.registers().a()));
                 },
 
                 ROM_RAISE_ERROR_ADDRESS => {
@@ -227,7 +233,8 @@ impl Runner {
             if self.trace_rom {
                 match pc {
                     0x0000 => println!("ROM RESET"),
-                    ROM_EMIT_CHAR_ADDRESS => println!("ROM EMIT CHAR {}-{}", self.cpu.registers().a() as char, self.cpu.registers().a()),
+                    ROM_EMIT_CHAR_ADDRESS => println!("ROM EMIT CHAR {}-{}",
+                        ace_to_unicode(self.cpu.registers().a()), self.cpu.registers().a()),
                     //0x0010 => println!("ROM PUSH DE"),
                     //0x0018 => println!("ROM POP DE"),
                     ROM_RAISE_ERROR_ADDRESS => println!("ROM ERROR {}", self.cpu.registers().a()),

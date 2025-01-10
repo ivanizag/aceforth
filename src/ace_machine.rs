@@ -78,7 +78,7 @@ impl AceMachine {
             cursor -= 32;
         }
 
-        self.poke(cursor, c as u8);
+        self.poke(cursor, unicode_to_ace(c));
         cursor += 1;
         self.poke16(CURSOR_ADDRESS, cursor);
         self.poke16(ENDBUF_ADDRESS, cursor + 1);
@@ -102,7 +102,7 @@ impl AceMachine {
             if c == 0 {
                 c = 0x20;
             }
-            line.push(c as char);
+            line.push(ace_to_unicode(c));
 
             cursor += 1;
             if cursor % COLUMNS == 0 {
@@ -222,12 +222,38 @@ impl Machine for AceMachine {
     }
 }
 
+pub fn unicode_to_ace(c: char) -> u8 {
+    match c {
+        '■' => 0x10,
+        '▝' => 0x11,
+        '▘' => 0x12,
+        '▀' => 0x13,
+        '▗' => 0x14,
+        '▐' => 0x15,
+        '▚' => 0x16,
+        '▜' => 0x17,
+
+        '£' => 0x60,
+        '©' => 0x7f,
+
+        '▙' => 0x91,
+        '▟' => 0x92,
+        '▄' => 0x93,
+        '▛' => 0x94,
+        '▌' => 0x95,
+        '▞' => 0x96,
+        '▖' => 0x97,
+
+        _ => c as u8,
+    }
+}
+
 pub fn ace_to_unicode(code: u8) -> char {
     let code = code & 0x7f;
 
     match code {
         0x00 => ' ',
-        0x01..=0x0f => char::from_u32(0x2400 + code as u32).unwrap(),
+        //0x01..=0x0f => char::from_u32(0x2400 + code as u32).unwrap(),
         0x10 => '■',
         0x11 => '▝',
         0x12 => '▘',
@@ -236,29 +262,29 @@ pub fn ace_to_unicode(code: u8) -> char {
         0x15 => '▐',
         0x16 => '▚',
         0x17 => '▜',
-        0x18..=0x1f => char::from_u32(0x2400 + code as u32).unwrap(),
+        //0x18..=0x1f => char::from_u32(0x2400 + code as u32).unwrap(),
+        b'\r' => '\n',
+
         0x60 => '£',
         0x7f => '©',
+
+        0x90 => ' ',
+        0x91 => '▙',
+        0x92 => '▟',
+        0x93 => '▄',
+        0x94 => '▛',
+        0x95 => '▌',
+        0x96 => '▞',
+        0x97 => '▖',
+
         _ => code as char,
     }
 }
 
 pub fn ace_to_printable(code: u8) -> String {
-    match code {
-        0x90 => " ".to_string(),
-        0x91 => "▙".to_string(),
-        0x92 => "▟".to_string(),
-        0x93 => "▄".to_string(),
-        0x94 => "▛".to_string(),
-        0x95 => "▌".to_string(),
-        0x96 => "▞".to_string(),
-        0x97 => "▖".to_string(),
-        _ => {
-            if code & 0x80 != 0 {
-                format!("\x1b[7m{}\x1b[0m", ace_to_unicode(code))
-            } else {
-                ace_to_unicode(code).to_string()
-            }
-        }
+    if code & 0x80 == 0 || (0x90..=0x97).contains(&code) {
+        ace_to_unicode(code).to_string()
+    } else {
+        format!("\x1b[7m{}\x1b[0m", ace_to_unicode(code))
     }
 }

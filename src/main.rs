@@ -13,7 +13,7 @@ const WELCOME: &str =
 "jaceforth: Jupiter Ace Forth https://github.com/ivanizag/jaceforth";
 
 const INTRO: &str =
-"Enter Jupiter Ace Forth commands. Type control-C to exit.";
+"Enter Jupiter Ace Forth commands. Type $HELP for help, control-C to exit.";
 
 
 fn main() {
