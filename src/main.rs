@@ -6,6 +6,8 @@ use rustyline::DefaultEditor;
 mod ace_machine;
 mod runner;
 
+use runner::Runner;
+
 // Welcome message
 const WELCOME: &str =
 "jaceforth: Jupiter Ace Forth https://github.com/ivanizag/jaceforth";
@@ -39,7 +41,7 @@ fn main() {
     println!("{}", INTRO);
     println!();
 
-    let mut runner = runner::Runner::new(trace_cpu, trace_io, trace_rom);
+    let mut runner = Runner::new(trace_cpu, trace_io, trace_rom);
     runner.prepare();
 
     let mut editor: DefaultEditor;
@@ -65,8 +67,12 @@ fn main() {
                 let response = runner.execute(&line);
 
                 println!("{}", response.output);
+
                 pending_input = response.pending_input;
                 if let Some(error_code) = response.error_code {
+                    if error_code == Runner::ERROR_CODE_QUIT {
+                        break;
+                    }
                     println!("Error code: {}", error_code);
                 }
                 if let Some(screen) = response.screen {

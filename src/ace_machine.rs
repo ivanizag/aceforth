@@ -3,14 +3,20 @@ use iz80::Machine;
 static ROM: &[u8] = include_bytes!("../resources/jupiter ace.rom");
 
 
-const INSCRN_ADDRESS: u16 = 0x3C1E;
-const CURSOR_ADDRESS: u16 = 0x3C20;
-const ENDBUF_ADDRESS: u16 = 0x3C22;
+const INSCRN_ADDRESS: u16 = 0x3C1E; // Start of the input buffer
+const CURSOR_ADDRESS: u16 = 0x3C20; // Cursor position
+const ENDBUF_ADDRESS: u16 = 0x3C22; // End of the input buffer
+const LHALF_ADDRESS:  u16 = 0x3C24; // End of the output buffer
 const ADDRESS_STATIN: u16 = 0x3c28;
 
 
-const START_OF_SCRREN: u16 = 0x2400;
+const START_OF_SCREEN: u16 = 0x2400;
+const MINIMAL_END_OF_OUTPUT_BUFFER: u16 = 0x2440;
+const INITIAL_START_OF_INPUT_BUFFER: u16 = 0x26e0;
 const END_OF_SCREEN: u16 = 0x2700;
+pub const MAX_INPUT_BUFFER_SIZE: u16 = END_OF_SCREEN - MINIMAL_END_OF_OUTPUT_BUFFER - 2;
+
+const COLUMNS: u16 = 32;
 
 const STATIN_ENTER_MASK: u8 = 0b0010_0000;
 
@@ -27,69 +33,104 @@ impl AceMachine {
         }
     }
 
-    /*
-    pub fn dump_buffer_info(&self) {
-        let inscrn = self.peek16(INSCRN_ADDRESS);
-        let cursor = self.peek16(CURSOR_ADDRESS);
-        let endbuf = self.peek16(ENDBUF_ADDRESS);
-        println!("INSRSCRN: 0x{:04x}, ", inscrn);
-        println!("CURSOR: 0x{:04x}, ", cursor);
-        println!("ENDBUF: 0x{:04x}", endbuf);
-        let inscrn_char = self.peek(inscrn);
-        println!("Char at inscrn: {}, 0x{:02x}", (inscrn_char & 0x7f) as char, inscrn_char);
-        let cursor_char = self.peek(cursor);
-        println!("Char at cursor: {}, 0x{:02x}", (cursor_char & 0x7f) as char, cursor_char);
-
-        for i in inscrn..=(endbuf+5) {
-            let c = self.peek(i);
-            println!("at {:04x} {}, 0x{:02x}", i, (c&0x7f) as char, c);
-        }
-    }
-    */
-
     pub fn inject_command(&mut self, command: &str) {
-        let mut cursor = self.peek16(INSCRN_ADDRESS) + 1;
-        for c in command.chars() {
-            cursor += 1;
-            self.poke(cursor, c as u8);
+        for ch in command.chars() {
+            self.inject_char(ch);
         }
-        cursor += 1;
-        self.poke(cursor, 0x00);
-        self.poke16(CURSOR_ADDRESS, self.peek16(INSCRN_ADDRESS) + 1);
-        self.poke16(ENDBUF_ADDRESS, cursor);
 
         let mut statin = self.peek(ADDRESS_STATIN);
         statin |= STATIN_ENTER_MASK;
         self.poke(ADDRESS_STATIN, statin);
     }
 
-    pub fn extract_pending_input(&self) -> Option<String> {
-        let cursor = self.peek16(CURSOR_ADDRESS);
+    fn inject_char(&mut self, c: char) -> bool {
+        // The char is inserted at the end of the buffer
+        // Assumptions:
+        //    - The cursor is at the last line of the screen
+        //    - The cursor is at the end of the buffer
+        let mut cursor = self.peek16(CURSOR_ADDRESS);
+
+        if cursor == END_OF_SCREEN - 1 {
+            // The cursor is at the end of the screen
+            // We need to scroll the screen up if the output buffer
+            // is bigger that two lines
+            let mut end_of_output = self.peek16(LHALF_ADDRESS);
+            if end_of_output <= MINIMAL_END_OF_OUTPUT_BUFFER {
+                // We can't scroll the screen anymore
+                return false;
+            }
+
+            // Scroll the screen up one line
+            for i in START_OF_SCREEN..(END_OF_SCREEN - COLUMNS) {
+                self.poke(i, self.peek(i+32));
+            }
+            for i in (END_OF_SCREEN-32)..END_OF_SCREEN {
+                self.poke(i, 0x20);
+            }
+
+            let mut start_of_input = self.peek16(INSCRN_ADDRESS);
+            start_of_input += 32;
+            self.poke16(INSCRN_ADDRESS, start_of_input);
+
+            end_of_output -= 32;
+            self.poke16(LHALF_ADDRESS, end_of_output);
+
+            cursor -= 32;
+        }
+
+        self.poke(cursor, c as u8);
+        cursor += 1;
+        self.poke16(CURSOR_ADDRESS, cursor);
+        self.poke16(ENDBUF_ADDRESS, cursor + 1);
+        true
+    }
+
+    pub fn extract_pending_input(&mut self) -> Option<String> {
+        let mut cursor = self.peek16(CURSOR_ADDRESS);
         let endbuf = self.peek16(ENDBUF_ADDRESS);
         let len = endbuf - cursor - 1;
         if len == 0 {
             return None;
         }
 
-        // on Edit there is no question mark
-        // assert!(self.peek(cursor) == '?' as u8 | 0x80); // Inverse question mark
-
+        // Extract the info
         let mut command = String::new();
-        for i in (cursor+1)..END_OF_SCREEN {
-            let c = self.peek(i);
+        cursor += 1; // Skip the cursor symbol
+        let mut line = Vec::new();
+        while cursor < END_OF_SCREEN {
+            let mut c = self.peek(cursor);
             if c == 0 {
-                command.push('\n');
-            } else {
-                command.push(c as char);
+                c = 0x20;
+            }
+            line.push(c as char);
+
+            cursor += 1;
+            if cursor % COLUMNS == 0 {
+                let text = line.iter().collect::<String>();
+                command.push_str(text.trim_end());
+                line.clear();
             }
         }
-        Some(command.trim_end().to_string())
+
+        // Restore the buffers
+        let buffer_start = self.peek16(INSCRN_ADDRESS);
+        for i in buffer_start..END_OF_SCREEN {
+            self.poke(i, 0x20);
+        }
+        self.poke16(INSCRN_ADDRESS, INITIAL_START_OF_INPUT_BUFFER);
+        self.poke16(CURSOR_ADDRESS, INITIAL_START_OF_INPUT_BUFFER+1);
+        self.poke16(ENDBUF_ADDRESS, INITIAL_START_OF_INPUT_BUFFER+2);
+        self.poke16(LHALF_ADDRESS, INITIAL_START_OF_INPUT_BUFFER);
+        self.poke(INITIAL_START_OF_INPUT_BUFFER, 0x00);
+        self.poke(INITIAL_START_OF_INPUT_BUFFER+1, 0x97); // Cursor symbol
+
+        Some(command.to_string())
     }
 
     pub fn get_screen_as_text(&self) -> String {
         let mut screen = String::new();
         for i in 0..(24*32) {
-            let c = self.ram[i + START_OF_SCRREN as usize];
+            let c = self.ram[i + START_OF_SCREEN as usize];
             screen.push_str(&ace_to_printable(c));
             if i % 32 == 31 {
                 screen.push('\n');

@@ -8,6 +8,7 @@ use miniz_oxide::inflate::decompress_to_vec_with_limit;
 use iz80::*;
 
 use super::ace_machine::AceMachine;
+use super::ace_machine::MAX_INPUT_BUFFER_SIZE;
 
 static INITIAL_SNAPSHOT: &[u8] = include_bytes!("../resources/initialstate.sav");
 
@@ -25,7 +26,7 @@ pub struct Response {
     pub screen: Option<String>,
 }
 
-const METACOMMAND_PREFIX: &str = "##";
+const METACOMMAND_PREFIX: &str = "*";
 
 const ROM_EMIT_CHAR_ADDRESS: u16 = 0x0008;
 const ROM_RAISE_ERROR_ADDRESS: u16 = 0x0022;
@@ -68,11 +69,29 @@ impl Runner {
 
     pub fn execute_internal(&mut self, commands: &str) -> Response {
         let mut outputs = Vec::new();
-        for command in commands.lines() {
-            let response =  if command.starts_with(METACOMMAND_PREFIX) {
-                self.execute_metacommand(&command[METACOMMAND_PREFIX.len()..])
+        let mut lines = commands.lines().collect::<Vec<_>>();
+        if lines.len() == 0 {
+            // At least one line is considered
+            lines.push("");
+        }
+        for line in lines {
+            if line.len() > MAX_INPUT_BUFFER_SIZE as usize {
+                return Response {
+                    output: format!("Command line too long. The maximum supported size is {}", MAX_INPUT_BUFFER_SIZE),
+                    pending_input: None,
+                    error_code: Some(Self::ERROR_CODE_INPUT_BUFFER_OVERFLOW),
+                    screen: None,
+                };
+            }
+            let response =  if line.starts_with(METACOMMAND_PREFIX) {
+                let command = &line[METACOMMAND_PREFIX.len()..];
+                if command.starts_with(" ") {
+                    self.execute_command(&line)
+                } else {
+                    self.execute_metacommand(&line[METACOMMAND_PREFIX.len()..])
+                }
             } else {
-                self.execute_command(&command)
+                self.execute_command(&line)
             };
             if response.error_code.is_some()
                     || response.pending_input.is_some()
@@ -91,6 +110,20 @@ impl Runner {
         }
     }
 
+    const METACOMMANDS_HELP: &str = r##"
+{prefix}HELP: Shows this help
+{prefix}QUIT: Exits the emulator
+{prefix}SCREENSHOOT: Shows the current screen contents
+{prefix}SCREEN: Toggles screen dumping
+{prefix}TRACE: Toggles ROM tracing
+{prefix}SAVE [filename]: Saves a snapshot to a file
+{prefix}LOAD [filename]: Loads a snapshot from a file
+"##;
+
+    pub const ERROR_CODE_UNKNOWN_METACOMMAND: u8 = 100;
+    pub const ERROR_CODE_QUIT: u8 = 101;
+    pub const ERROR_CODE_INPUT_BUFFER_OVERFLOW: u8 = 102;
+
     fn execute_metacommand(&mut self, command: &str) -> Response {
         let output;
         let pending_input = None;
@@ -101,7 +134,14 @@ impl Runner {
         let command = parts[0].to_uppercase();
 
         match command.as_str() {
-            "DUMP" => {
+            "HELP" => {
+                output = Self::METACOMMANDS_HELP.replace("{prefix}", METACOMMAND_PREFIX);
+            },
+            "QUIT" => {
+                output = "".to_string();
+                error_code = Some(Self::ERROR_CODE_QUIT);
+            },
+            "SCREENSHOT" => {
                 output = "".to_string();
                 screen = Some(self.machine.get_screen_as_text());
             },
@@ -128,7 +168,7 @@ impl Runner {
                 }
             },
             _ => {
-               error_code = Some(100);
+               error_code = Some(Self::ERROR_CODE_UNKNOWN_METACOMMAND);
                 output = format!("Unknown metacommand: {}", command);
             }
         }
@@ -142,6 +182,7 @@ impl Runner {
     }
 
     fn execute_command(&mut self, command: &str) -> Response {
+        println!("Command: {}", command);
 
         // Set command
         self.machine.inject_command(command);
@@ -186,10 +227,10 @@ impl Runner {
             if self.trace_rom {
                 match pc {
                     0x0000 => println!("ROM RESET"),
-                    0x0008 => println!("ROM EMIT CHAR {}-{}", self.cpu.registers().a() as char, self.cpu.registers().a()),
+                    ROM_EMIT_CHAR_ADDRESS => println!("ROM EMIT CHAR {}-{}", self.cpu.registers().a() as char, self.cpu.registers().a()),
                     //0x0010 => println!("ROM PUSH DE"),
                     //0x0018 => println!("ROM POP DE"),
-                    0x0022 => println!("ROM ERROR {}", self.cpu.registers().a()),
+                    ROM_RAISE_ERROR_ADDRESS => println!("ROM ERROR {}", self.cpu.registers().a()),
                     //0x0028 => println!("ROM FIND RAM END"),
                     0x0038 => println!("ROM VSYNC INT"),
                     _ => {}

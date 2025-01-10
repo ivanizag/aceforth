@@ -134,7 +134,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e1788e2d7cd0240a2a132d7790b389a2128099134fa7b99ccb12dea4694e990b"
 
 [[package]]
-name = "izace"
+name = "jaceforth"
 version = "0.1.0"
 dependencies = [
  "clap",
