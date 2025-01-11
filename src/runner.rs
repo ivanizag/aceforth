@@ -9,6 +9,7 @@ use iz80::*;
 
 use super::ace_machine::AceMachine;
 use super::ace_machine::MAX_INPUT_BUFFER_SIZE;
+use crate::ace_machine::END_OF_ROM;
 use super::ace_machine::ace_to_unicode;
 
 static INITIAL_SNAPSHOT: &[u8] = include_bytes!("../resources/initialstate.sav");
@@ -17,6 +18,7 @@ pub struct Runner {
     cpu: Cpu,
     machine: AceMachine,
     trace_rom: bool,
+    trace_on_timeout: bool,
     dump_screen: bool,
 }
 
@@ -33,6 +35,7 @@ const ROM_EMIT_CHAR_ADDRESS: u16 = 0x0008;
 const ROM_RAISE_ERROR_ADDRESS: u16 = 0x0022;
 const WAIT_FOR_SYNC_HALT_ADDRESS: u16 = 0x0679;
 const SPINWAIT_FOR_LISTING_ADDRESS: u16 = 0x16e1;
+const BEEP_LOOP_ADDRESS: u16 = 0x0bc1;
 const QUERY_LOOP_ADDRESS: u16 = 0x059b;
 
 impl Runner {
@@ -45,6 +48,7 @@ impl Runner {
             cpu,
             machine,
             trace_rom,
+            trace_on_timeout: true,
             dump_screen: false,
         }
     }
@@ -216,33 +220,46 @@ Additional metacommands are available starting with {prefix}:
             }
 
             if self.cpu.cycle_count() - initial_cycle > timeout_cycles {
-                output.push_str("Timeout");
-                error_code = Some(Self::ERROR_CODE_TIMEOUT);
-                break;
+                if self.trace_on_timeout {
+                    self.cpu.set_trace(true);
+                } else {
+                    output.push_str("Timeout");
+                    error_code = Some(Self::ERROR_CODE_TIMEOUT);
+                    break;
+                }
             }
 
             let mut pc = self.cpu.registers().pc();
 
             // Hooks on the ROM code
-            match pc {
-                ROM_EMIT_CHAR_ADDRESS => {
-                    output.push(ace_to_unicode(self.cpu.registers().a()));
-                },
+            if pc < END_OF_ROM {
+                match pc {
+                    ROM_EMIT_CHAR_ADDRESS => {
+                        output.push(ace_to_unicode(self.cpu.registers().a()));
+                    },
 
-                ROM_RAISE_ERROR_ADDRESS => {
-                    error_code = Some(self.cpu.registers().a());
-                },
+                    ROM_RAISE_ERROR_ADDRESS => {
+                        error_code = Some(self.cpu.registers().a());
+                    },
 
-                WAIT_FOR_SYNC_HALT_ADDRESS => {
-                    // Skip the HALT instruction used to slow down VLIST
-                    pc += 1;
-                    self.cpu.registers().set_pc(pc);
+                    WAIT_FOR_SYNC_HALT_ADDRESS => {
+                        // Skip the HALT instruction used to slow down VLIST
+                        pc += 1;
+                        self.cpu.registers().set_pc(pc);
+                    }
+
+                    BEEP_LOOP_ADDRESS => {
+                        // Skip the BEEP loop
+                        pc += 3;
+                        self.cpu.registers().set_pc(pc);
+                    }
+
+                    SPINWAIT_FOR_LISTING_ADDRESS => {
+                        // Inject key press to continue LIST
+                        self.machine.inject_key(0x20);
+                    }
+                    _ => {}
                 }
-                SPINWAIT_FOR_LISTING_ADDRESS => {
-                    // Inject key press to continue LIST
-                    self.machine.inject_key(0x20);
-                }
-                _ => {}
             }
 
             // Tracing the ROM calls

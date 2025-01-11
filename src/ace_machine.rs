@@ -10,7 +10,7 @@ const LHALF_ADDRESS:  u16 = 0x3C24; // End of the output buffer
 const KEYCOD_ADDRESS: u16 = 0x3C26; // Last key pressed
 const ADDRESS_STATIN: u16 = 0x3c28;
 
-
+pub const END_OF_ROM: u16 = 0x2000;
 const START_OF_SCREEN: u16 = 0x2400;
 const MINIMAL_END_OF_OUTPUT_BUFFER: u16 = 0x2440;
 const INITIAL_START_OF_INPUT_BUFFER: u16 = 0x26e0;

@@ -2,9 +2,10 @@ Commands:
     VLIST: waits for a VSYNC using HALT: fixed.
     LIST: waits for key on long lists: fixed.
     EDIT: needs multilines input: fixed, all in a single line.
-    BEEP: infinite loop
+    BEEP: fixed, waiting skiped
     LOAD
     SAVE
+    timeouts: max number of cycles, test with ": INF 1 BEGIN 1 + DUP . 0 UNTIL ;"
 
 Missing:
     INVERSE VIDEO (shift 4), page 12
@@ -102,6 +103,17 @@ Execute "edit a"
 26e0 = 00,20...
 INS              = 2680, 2681, 2685, 2680
 The cursor can be moved to the 4 directions within the buffer 
+
+// Edition of a long listing, secong part
+Execute "edit eg" and enter the first part
+2640 = 00,BF,20...
+2660 = 00,' ." q"',20...
+2680 = 00,' ." r"',20...
+26a0 = 00,' ." s"',20...
+26c0 = 00,';',20...
+2ce0 = 00,20...
+INS              = 2640, 2641, 2642, 2650
+
 
 
 

@@ -70,10 +70,10 @@ fn main() {
 
                 pending_input = response.pending_input;
                 if let Some(error_code) = response.error_code {
-                    if error_code == Runner::ERROR_CODE_QUIT {
+                    if error_code == Runner::ERROR_CODE_QUIT || error_code == Runner::ERROR_CODE_TIMEOUT {
                         break;
                     }
-                    println!("Error code: {}", error_code);
+                    println!(">>> Error code: {}", error_code);
                 }
                 if let Some(screen) = response.screen {
                     println!("----------------------------------");
