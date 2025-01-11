@@ -32,6 +32,7 @@ const METACOMMAND_PREFIX: &str = "$";
 const ROM_EMIT_CHAR_ADDRESS: u16 = 0x0008;
 const ROM_RAISE_ERROR_ADDRESS: u16 = 0x0022;
 const WAIT_FOR_SYNC_HALT_ADDRESS: u16 = 0x0679;
+const SPINWAIT_FOR_LISTING_ADDRESS: u16 = 0x16e1;
 const QUERY_LOOP_ADDRESS: u16 = 0x059b;
 
 impl Runner {
@@ -87,12 +88,12 @@ impl Runner {
             let response =  if line.starts_with(METACOMMAND_PREFIX) {
                 let command = &line[METACOMMAND_PREFIX.len()..];
                 if command.starts_with(" ") {
-                    self.execute_command(&line)
+                    self.execute_command(&line, 1_000_000_000)
                 } else {
                     self.execute_metacommand(&line[METACOMMAND_PREFIX.len()..])
                 }
             } else {
-                self.execute_command(&line)
+                self.execute_command(&line, 1_000_000_000)
             };
             if response.error_code.is_some()
                     || response.pending_input.is_some()
@@ -128,6 +129,8 @@ Additional metacommands are available starting with {prefix}:
     pub const ERROR_CODE_UNKNOWN_METACOMMAND: u8 = 100;
     pub const ERROR_CODE_QUIT: u8 = 101;
     pub const ERROR_CODE_INPUT_BUFFER_OVERFLOW: u8 = 102;
+    pub const ERROR_CODE_HALT: u8 = 103;
+    pub const ERROR_CODE_TIMEOUT: u8 = 104;
 
     fn execute_metacommand(&mut self, command: &str) -> Response {
         let output;
@@ -189,12 +192,14 @@ Additional metacommands are available starting with {prefix}:
         }
     }
 
-    fn execute_command(&mut self, command: &str) -> Response {
+    fn execute_command(&mut self, command: &str, timeout_cycles: u64) -> Response {
         // Set command
         self.machine.inject_command(command);
 
         let mut output = String::new();
         let mut error_code = None;
+
+        let initial_cycle = self.cpu.cycle_count();
 
         // Run up to the query loop again
         if self.cpu.registers().pc() == QUERY_LOOP_ADDRESS {
@@ -205,7 +210,14 @@ Additional metacommands are available starting with {prefix}:
             self.cpu.execute_instruction(&mut self.machine);
 
             if self.cpu.is_halted() {
-                println!("HALT instruction that will never be interrupted");
+                output.push_str("HALT instruction that will never be interrupted");
+                error_code = Some(Self::ERROR_CODE_HALT);
+                break;
+            }
+
+            if self.cpu.cycle_count() - initial_cycle > timeout_cycles {
+                output.push_str("Timeout");
+                error_code = Some(Self::ERROR_CODE_TIMEOUT);
                 break;
             }
 
@@ -222,9 +234,13 @@ Additional metacommands are available starting with {prefix}:
                 },
 
                 WAIT_FOR_SYNC_HALT_ADDRESS => {
-                    // Skip the HALT instruction used to slow down listings
+                    // Skip the HALT instruction used to slow down VLIST
                     pc += 1;
                     self.cpu.registers().set_pc(pc);
+                }
+                SPINWAIT_FOR_LISTING_ADDRESS => {
+                    // Inject key press to continue LIST
+                    self.machine.inject_key(0x20);
                 }
                 _ => {}
             }

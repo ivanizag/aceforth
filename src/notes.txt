@@ -1,9 +1,16 @@
 Commands:
     VLIST: waits for a VSYNC using HALT: fixed.
+    LIST: waits for key on long lists: fixed.
+    EDIT: needs multilines input: fixed, all in a single line.
     BEEP: infinite loop
-    EDIT: to study: now only the first line can be edited.
     LOAD
     SAVE
+
+Missing:
+    INVERSE VIDEO (shift 4), page 12
+    GRAPHICS (shift 9), page 12
+    Loading from tape (chapter 3)
+    FORGET not working ¿?, page 39
 
 
 Other:

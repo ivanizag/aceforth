@@ -7,6 +7,7 @@ const INSCRN_ADDRESS: u16 = 0x3C1E; // Start of the input buffer
 const CURSOR_ADDRESS: u16 = 0x3C20; // Cursor position
 const ENDBUF_ADDRESS: u16 = 0x3C22; // End of the input buffer
 const LHALF_ADDRESS:  u16 = 0x3C24; // End of the output buffer
+const KEYCOD_ADDRESS: u16 = 0x3C26; // Last key pressed
 const ADDRESS_STATIN: u16 = 0x3c28;
 
 
@@ -41,6 +42,10 @@ impl AceMachine {
         let mut statin = self.peek(ADDRESS_STATIN);
         statin |= STATIN_ENTER_MASK;
         self.poke(ADDRESS_STATIN, statin);
+    }
+
+    pub fn inject_key(&mut self, key: u8) {
+        self.poke(KEYCOD_ADDRESS, key);
     }
 
     fn inject_char(&mut self, c: char) -> bool {
