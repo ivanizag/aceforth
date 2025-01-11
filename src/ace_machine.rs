@@ -91,17 +91,12 @@ impl AceMachine {
     }
 
     pub fn extract_pending_input(&mut self) -> Option<String> {
-        let mut cursor = self.peek16(CURSOR_ADDRESS);
-        let endbuf = self.peek16(ENDBUF_ADDRESS);
-        let len = endbuf - cursor - 1;
-        if len == 0 {
-            return None;
-        }
-
-        // Extract the info
         let mut command = String::new();
+        let mut cursor = self.peek16(CURSOR_ADDRESS);
         cursor += 1; // Skip the cursor symbol
         let mut line = Vec::new();
+
+        // We have to read until the enf of the screen, we can't trust endbuf when EDITing long listings
         while cursor < END_OF_SCREEN {
             let mut c = self.peek(cursor);
             if c == 0 {
@@ -129,7 +124,11 @@ impl AceMachine {
         self.poke(INITIAL_START_OF_INPUT_BUFFER, 0x00);
         self.poke(INITIAL_START_OF_INPUT_BUFFER+1, 0x97); // Cursor symbol
 
-        Some(command.to_string())
+        if command.is_empty() {
+            None
+        } else {
+            Some(command.to_string())
+        }
     }
 
     pub fn get_screen_as_text(&self) -> String {
@@ -254,8 +253,6 @@ pub fn unicode_to_ace(c: char) -> u8 {
 }
 
 pub fn ace_to_unicode(code: u8) -> char {
-    let code = code & 0x7f;
-
     match code {
         0x00 => ' ',
         //0x01..=0x0f => char::from_u32(0x2400 + code as u32).unwrap(),
@@ -282,7 +279,7 @@ pub fn ace_to_unicode(code: u8) -> char {
         0x96 => '▞',
         0x97 => '▖',
 
-        _ => code as char,
+        _ => (code & 0x7f) as char,
     }
 }
 
