@@ -48,7 +48,7 @@ pub fn unicode_to_ace(c: char) -> u8 {
 
 fn ace_to_symbol(code: u8) -> char {
     if (0..0x20).contains(&code) {
-        return match code & 0x07 {
+        match code & 0x07 {
             0x00 => ' ',
             0x01 => '▝',
             0x02 => '▘',
@@ -60,7 +60,7 @@ fn ace_to_symbol(code: u8) -> char {
             _ => panic!("unreachable"),
         }
     } else if (0x80..0xa0).contains(&code) {
-        return match code & 0x07 {
+        match code & 0x07 {
             0x00 => '█',
             0x01 => '▙',
             0x02 => '▟',
@@ -82,7 +82,7 @@ fn ace_to_symbol(code: u8) -> char {
 }
 
 pub fn ace_to_emited(code: u8) -> char {
-    if code == '\r' as u8 {
+    if code == b'\r' {
         '\n'
     } else {
         ace_to_symbol(code)

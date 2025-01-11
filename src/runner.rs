@@ -78,7 +78,7 @@ impl Runner {
     pub fn execute_internal(&mut self, commands: &str) -> Response {
         let mut outputs = Vec::new();
         let mut lines = commands.lines().collect::<Vec<_>>();
-        if lines.len() == 0 {
+        if lines.is_empty() {
             // At least one line is considered
             lines.push("");
         }
@@ -91,16 +91,17 @@ impl Runner {
                     screen: None,
                 };
             }
-            let response =  if line.starts_with(METACOMMAND_PREFIX) {
-                let command = &line[METACOMMAND_PREFIX.len()..];
+
+            let response = if let Some(command) = line.strip_prefix(METACOMMAND_PREFIX) {
                 if command.starts_with(" ") {
-                    self.execute_command(&line, 1_000_000_000)
+                    self.execute_command(line, 1_000_000_000)
                 } else {
                     self.execute_metacommand(&line[METACOMMAND_PREFIX.len()..])
                 }
             } else {
-                self.execute_command(&line, 1_000_000_000)
+                self.execute_command(line, 1_000_000_000)
             };
+
             if response.error_code.is_some()
                     || response.pending_input.is_some()
                     || response.screen.is_some() {
