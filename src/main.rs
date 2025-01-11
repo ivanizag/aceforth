@@ -4,6 +4,7 @@ use rustyline::DefaultEditor;
 
 
 mod ace_machine;
+mod characters;
 mod runner;
 
 use runner::Runner;

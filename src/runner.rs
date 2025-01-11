@@ -7,10 +7,12 @@ use miniz_oxide::inflate::decompress_to_vec_with_limit;
 
 use iz80::*;
 
-use super::ace_machine::AceMachine;
-use super::ace_machine::MAX_INPUT_BUFFER_SIZE;
+use crate::ace_machine::AceMachine;
+use crate::ace_machine::MAX_INPUT_BUFFER_SIZE;
 use crate::ace_machine::END_OF_ROM;
-use super::ace_machine::ace_to_unicode;
+use crate::characters::{ace_to_emited, ace_to_screenshot};
+
+
 
 static INITIAL_SNAPSHOT: &[u8] = include_bytes!("../resources/initialstate.sav");
 
@@ -235,7 +237,7 @@ Additional metacommands are available starting with {prefix}:
             if pc < END_OF_ROM {
                 match pc {
                     ROM_EMIT_CHAR_ADDRESS => {
-                        output.push(ace_to_unicode(self.cpu.registers().a()));
+                        output.push(ace_to_emited(self.cpu.registers().a()));
                     },
 
                     ROM_RAISE_ERROR_ADDRESS => {
@@ -267,7 +269,7 @@ Additional metacommands are available starting with {prefix}:
                 match pc {
                     0x0000 => println!("ROM RESET"),
                     ROM_EMIT_CHAR_ADDRESS => println!("ROM EMIT CHAR {}-{}",
-                        ace_to_unicode(self.cpu.registers().a()), self.cpu.registers().a()),
+                        ace_to_screenshot(self.cpu.registers().a()), self.cpu.registers().a()),
                     //0x0010 => println!("ROM PUSH DE"),
                     //0x0018 => println!("ROM POP DE"),
                     ROM_RAISE_ERROR_ADDRESS => println!("ROM ERROR {}", self.cpu.registers().a()),

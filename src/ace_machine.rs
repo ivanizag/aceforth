@@ -1,5 +1,7 @@
 use iz80::Machine;
 
+use crate::characters::{ace_to_emited, ace_to_screenshot, unicode_to_ace};
+
 static ROM: &[u8] = include_bytes!("../resources/jupiter ace.rom");
 
 
@@ -102,7 +104,7 @@ impl AceMachine {
             if c == 0 {
                 c = 0x20;
             }
-            line.push(ace_to_unicode(c));
+            line.push(ace_to_emited(c));
 
             cursor += 1;
             if cursor % COLUMNS == 0 {
@@ -135,7 +137,7 @@ impl AceMachine {
         let mut screen = String::new();
         for i in 0..(24*32) {
             let c = self.ram[i + START_OF_SCREEN as usize];
-            screen.push_str(&ace_to_printable(c));
+            screen.push_str(&ace_to_screenshot(c));
             if i % 32 == 31 {
                 screen.push('\n');
             }
@@ -223,70 +225,5 @@ impl Machine for AceMachine {
             0x7ffe => 0xff, //self.keyboard.get_keyport(7),
             _ => 0xff,
         }
-    }
-}
-
-pub fn unicode_to_ace(c: char) -> u8 {
-    match c {
-        '■' => 0x10,
-        '▝' => 0x11,
-        '▘' => 0x12,
-        '▀' => 0x13,
-        '▗' => 0x14,
-        '▐' => 0x15,
-        '▚' => 0x16,
-        '▜' => 0x17,
-
-        '£' => 0x60,
-        '©' => 0x7f,
-
-        '▙' => 0x91,
-        '▟' => 0x92,
-        '▄' => 0x93,
-        '▛' => 0x94,
-        '▌' => 0x95,
-        '▞' => 0x96,
-        '▖' => 0x97,
-
-        _ => c as u8,
-    }
-}
-
-pub fn ace_to_unicode(code: u8) -> char {
-    match code {
-        0x00 => ' ',
-        //0x01..=0x0f => char::from_u32(0x2400 + code as u32).unwrap(),
-        0x10 => '■',
-        0x11 => '▝',
-        0x12 => '▘',
-        0x13 => '▀',
-        0x14 => '▗',
-        0x15 => '▐',
-        0x16 => '▚',
-        0x17 => '▜',
-        //0x18..=0x1f => char::from_u32(0x2400 + code as u32).unwrap(),
-        b'\r' => '\n',
-
-        0x60 => '£',
-        0x7f => '©',
-
-        0x90 => ' ',
-        0x91 => '▙',
-        0x92 => '▟',
-        0x93 => '▄',
-        0x94 => '▛',
-        0x95 => '▌',
-        0x96 => '▞',
-        0x97 => '▖',
-
-        _ => (code & 0x7f) as char,
-    }
-}
-
-pub fn ace_to_printable(code: u8) -> String {
-    if code & 0x80 == 0 || (0x90..=0x97).contains(&code) {
-        ace_to_unicode(code).to_string()
-    } else {
-        format!("\x1b[7m{}\x1b[0m", ace_to_unicode(code))
     }
 }
