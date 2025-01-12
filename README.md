@@ -1,10 +1,10 @@
 # aceforth: Jupiter Ace Forth Interpreter
 
-aceforth is a Forth interactive interpreter. It runs the Forth implementation used by the Jupiter Ace computer. It does so by emulating the Z80 cpu and the Jupiter ACE harfware. It executes the original Jupiter ACE Rom injecting commands on the input buffer and reading the output buffer.
+aceforth is a  Forth interactive interpreter. It runs the Forth implementation used by the Jupiter Ace computer. It does so by emulating the Z80 cpu and the Jupiter ACE harfware. It executes the original Jupiter Ace ROM injecting commands on the input buffer and reading the output buffer.
 
 aceforth runs on a terminal with the typical readline capabilites, including perstistent history and command editing.
 
-aceforth is not a complete emulator of the Jupiter Ace it does just what is needed to run the Forth implementation. There are many emulators available, I have been using César Hernández [ZEsarUX](https://github.com/chernandezba/zesarux).
+aceforth is not a complete emulator of the Jupiter Ace. It does just what is needed to run the Forth implementation. There are many emulators available, I have been using César Hernández [ZEsarUX](https://github.com/chernandezba/zesarux).
 ## Usage
 
 Run aceforth:
@@ -59,8 +59,8 @@ Additional metacommands are available starting with $:
 
 aceforth> $VIS
 Invisible mode is now not forced
-aceforth> 4 DUP 4 * .
-4 DUP 4 * . 16  OK  
+aceforth> 4 DUP * .
+4 DUP * . 16  OK  
 
 aceforth> $GRAPHS
 Graph characters: ■ ▝ ▘ ▀ ▗ ▐ ▚ ▜ ▙ ▟ ▄ ▛ ▌ ▞ ▖
