@@ -5,6 +5,7 @@ use rustyline::DefaultEditor;
 
 mod ace_machine;
 mod characters;
+mod errors;
 mod runner;
 
 use runner::Runner;
@@ -71,17 +72,17 @@ fn main() {
 
                 pending_input = response.pending_input;
                 if let Some(error_code) = response.error_code {
-                    if error_code == Runner::ERROR_CODE_QUIT || error_code == Runner::ERROR_CODE_TIMEOUT {
+                    if error_code == errors::ERROR_CODE_QUIT || error_code == errors::ERROR_CODE_TIMEOUT {
                         break;
                     }
-                    println!(">>> Error code: {}", error_code);
+                    println!(">>> Error code {}: {}", error_code, errors::error_message(error_code));
                 }
                 if let Some(screen) = response.screen {
-                    println!("----------------------------------");
+                    println!("╔════════════════════════════════╗");
                     for line in screen.lines() {
-                        println!("|{}|", line);
+                        println!("║{}║", line);
                     }
-                    println!("----------------------------------");
+                    println!("╚════════════════════════════════╝");
                 }
             },
             Err(ReadlineError::Interrupted) => {

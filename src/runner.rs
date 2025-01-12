@@ -11,8 +11,7 @@ use crate::ace_machine::AceMachine;
 use crate::ace_machine::MAX_INPUT_BUFFER_SIZE;
 use crate::ace_machine::END_OF_ROM;
 use crate::characters::{ace_to_emited, ace_to_screenshot};
-
-
+use crate::errors::*;
 
 static INITIAL_SNAPSHOT: &[u8] = include_bytes!("../resources/initialstate.sav");
 
@@ -87,7 +86,7 @@ impl Runner {
                 return Response {
                     output: format!("Command line too long. The maximum supported size is {}", MAX_INPUT_BUFFER_SIZE),
                     pending_input: None,
-                    error_code: Some(Self::ERROR_CODE_INPUT_BUFFER_OVERFLOW),
+                    error_code: Some(ERROR_CODE_INPUT_BUFFER_OVERFLOW),
                     screen: None,
                 };
             }
@@ -125,19 +124,13 @@ Type the same command you would type in the Jupitar ACE prompt.
 Additional metacommands are available starting with {prefix}:
   {prefix}HELP: Shows this help
   {prefix}QUIT: Exits the emulator
-  {prefix}SCREENSHOOT: Shows the current screen contents
+  {prefix}SCREENSHOT: Shows the current screen contents
   {prefix}SCREEN: Toggles screen dumping
   {prefix}TRACE: Toggles ROM tracing
   {prefix}SAVE [filename]: Saves a snapshot to a file
   {prefix}LOAD [filename]: Loads a snapshot from a file
   {prefix}GRAPHS: Show the Jupiter Ace graphical characters for easy copy-pasting.
 "##;
-
-    pub const ERROR_CODE_UNKNOWN_METACOMMAND: u8 = 100;
-    pub const ERROR_CODE_QUIT: u8 = 101;
-    pub const ERROR_CODE_INPUT_BUFFER_OVERFLOW: u8 = 102;
-    pub const ERROR_CODE_HALT: u8 = 103;
-    pub const ERROR_CODE_TIMEOUT: u8 = 104;
 
     fn execute_metacommand(&mut self, command: &str) -> Response {
         let output;
@@ -154,7 +147,7 @@ Additional metacommands are available starting with {prefix}:
             },
             "QUIT" => {
                 output = "".to_string();
-                error_code = Some(Self::ERROR_CODE_QUIT);
+                error_code = Some(ERROR_CODE_QUIT);
             },
             "SCREENSHOT" => {
                 output = "".to_string();
@@ -186,7 +179,7 @@ Additional metacommands are available starting with {prefix}:
                 output = "Graph characters: ■ ▝ ▘ ▀ ▗ ▐ ▚ ▜ ▙ ▟ ▄ ▛ ▌ ▞ ▖".to_string();
             },
             _ => {
-               error_code = Some(Self::ERROR_CODE_UNKNOWN_METACOMMAND);
+               error_code = Some(ERROR_CODE_UNKNOWN_METACOMMAND);
                 output = format!("Unknown metacommand: {}", command);
             }
         }
@@ -218,7 +211,7 @@ Additional metacommands are available starting with {prefix}:
 
             if self.cpu.is_halted() {
                 output.push_str("HALT instruction that will never be interrupted");
-                error_code = Some(Self::ERROR_CODE_HALT);
+                error_code = Some(ERROR_CODE_HALT);
                 break;
             }
 
@@ -227,7 +220,7 @@ Additional metacommands are available starting with {prefix}:
                     self.cpu.set_trace(true);
                 } else {
                     output.push_str("Timeout");
-                    error_code = Some(Self::ERROR_CODE_TIMEOUT);
+                    error_code = Some(ERROR_CODE_TIMEOUT);
                     break;
                 }
             }
@@ -242,7 +235,10 @@ Additional metacommands are available starting with {prefix}:
                     },
 
                     ROM_RAISE_ERROR_ADDRESS => {
-                        error_code = Some(self.cpu.registers().a());
+                        let a = self.cpu.registers().a();
+                        if a != ERROR_CODE_NONE { // PURGE raises a no error, so we ignore it
+                            error_code = Some(self.cpu.registers().a());
+                        }
                     },
 
                     WAIT_FOR_SYNC_HALT_ADDRESS => {

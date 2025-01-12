@@ -12,107 +12,12 @@ Missing:
     GRAPHICS (shift 9), page 12
     Loading from tape (chapter 3)
     FORGET not working ¿?, page 39
+    load and save from tape (chapter 14)
+    Understanding page 99
 
 
 Other:
     miniz_oxide example
-
-
-
-const INSCRN_ADDRESS: u16 = 0x3C1E;
-const CURSOR_ADDRESS: u16 = 0x3C20;
-const ENDBUF_ADDRESS: u16 = 0x3C22; // Input field end
-const LHALF_ADDRESS: u16 = 0x3c24; // Output field end
-
-
-const ADDRESS_STATIN: u16 = 0x3c28;
-
-
-const START_OF_SCRREN: u16 = 0x2400;
-const END_OF_SCREEN: u16 = 0x2700;
-
-
-
-Initial state:
-26e0 = 00,97(cuadrado) seguido de espacios
-INS,CUR,END,UNK = 26e0, 26e1, 26e2, 26e0
-
-Write "1":
-26e0 = 00,"1",97,20...
-26e1 = 97 (cuadrado)
-INS,CUR,END,UNK = 26e0, 26e2, 26e3, 26e0
-
-Write "12":
-26e0 = 00,"12",97,20...
-INS,CUR,END,UNK = 26e0, 26e3, 26e4, 26e0
-
-Write "123456789 123456789 123456789":
-26e0 = 00,"123456789 123456789 123456789",97,20
-INS...          = 26e0, 26fe, 26ff, 26e0
-
-Write "123456789 123456789 123456789 ":
-26e0 = 00,"123456789 123456789 123456789 ",97
-INS...          = 26e0, 26ff, 2700, 26e0
-
-Write "123456789 123456789 123456789 ":
-26c0 = 00,"123456789 123456789 123456789 1"
-26e0 = 97, 20...
-INS...          = 26c0, 26e0, 26e1, 26c0
-
-Write two full lines:
-(Everything before that is scrolled up)
-26a0 = 00,"123456789 123456789 123456789 1"
-26c0 =   "23456789 12356789 12456789 12345"
-26e0 = 97, 20...
-INS...          = 26a0, 26e0, 26e1, 26a0
-
-Several lines:
-LHALF = 2500
-
-Write until no more input is accepted (except return and baskspace):
-2400 = 20...
-2420 = 20...
-2440 = 00,"123....
-...
-27e0 = "34... ",97
-INS...          = 2440, 26ff, 2700, 2440
-
-Execute:
-The output is displayed on the first 2 lines (output buffer)
-26e0 =00, 97, 20....
-INS...          = 26e0, 26e1, 26e2, 26e0 (back to initial state)
-
-
-/// Error cases
-
-Initial state:
-26e0 = 00,97(cuadrado) seguido de espacios
-INS,CUR,END,UNK = 26e0, 26e1, 26e2, 26e0
-
-Write "XXX" enter:
-26e0 = 00,BF,"XXX",20...
-INS             = 26e0, 26e1, 26e5, 26e0
-When the cursor is moved, it gows back to the square 97
-
-// Edition
-Write a function: ": A 1 2 + . ;"
-Execute "edit a"
-2680 = 00,BF,": A",20...
-26a0 = 00,20,"1 2 + .",20...
-26c0 = 00,";",20...
-26e0 = 00,20...
-INS              = 2680, 2681, 2685, 2680
-The cursor can be moved to the 4 directions within the buffer 
-
-// Edition of a long listing, secong part
-Execute "edit eg" and enter the first part
-2640 = 00,BF,20...
-2660 = 00,' ." q"',20...
-2680 = 00,' ." r"',20...
-26a0 = 00,' ." s"',20...
-26c0 = 00,';',20...
-2ce0 = 00,20...
-INS              = 2640, 2641, 2642, 2650
 
 
 
