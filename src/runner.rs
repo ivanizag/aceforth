@@ -8,6 +8,7 @@ use miniz_oxide::inflate::decompress_to_vec_with_limit;
 use iz80::*;
 
 use crate::ace_machine::AceMachine;
+use crate::ace_machine::FLAG_ADDRESS;
 use crate::ace_machine::MAX_INPUT_BUFFER_SIZE;
 use crate::ace_machine::END_OF_ROM;
 use crate::characters::{ace_to_emited, ace_to_screenshot};
@@ -41,7 +42,7 @@ const QUERY_LOOP_ADDRESS: u16 = 0x059b;
 
 impl Runner {
     pub fn new(trace_cpu: bool, trace_io: bool, trace_rom: bool) -> Runner {
-        let machine = AceMachine::new(trace_io);
+        let machine = AceMachine::new(trace_io, true /* force invis */);
         let mut cpu = Cpu::new_z80();
         cpu.set_trace(trace_cpu);
 
@@ -49,7 +50,7 @@ impl Runner {
             cpu,
             machine,
             trace_rom,
-            trace_on_timeout: true,
+            trace_on_timeout: false,
             dump_screen: false,
         }
     }
@@ -64,6 +65,9 @@ impl Runner {
                 self.cpu.execute_instruction(&mut self.machine);
             }
         }
+
+        // Touch the flags to ensure invis is properly set
+        self.machine.poke(FLAG_ADDRESS, self.machine.peek(FLAG_ADDRESS));
     }
 
     pub fn execute(&mut self, commands: &str) -> Response {
@@ -130,6 +134,8 @@ Additional metacommands are available starting with {prefix}:
   {prefix}SAVE [filename]: Saves a snapshot to a file
   {prefix}LOAD [filename]: Loads a snapshot from a file
   {prefix}GRAPHS: Show the Jupiter Ace graphical characters for easy copy-pasting.
+  {prefix}VIS: Toggles invisible mode, Overwrites the VIS and INVIS words
+
 "##;
 
     fn execute_metacommand(&mut self, command: &str) -> Response {
@@ -177,6 +183,16 @@ Additional metacommands are available starting with {prefix}:
             },
             "GRAPHS" => {
                 output = "Graph characters: ■ ▝ ▘ ▀ ▗ ▐ ▚ ▜ ▙ ▟ ▄ ▛ ▌ ▞ ▖".to_string();
+            },
+            "VIS" => {
+                let force_invis = !self.machine.force_invis;
+                self.machine.force_invis = force_invis;
+                if force_invis {
+                    self.machine.poke(FLAG_ADDRESS, self.machine.peek(FLAG_ADDRESS) | 0x10);
+                } else {
+                    self.machine.poke(FLAG_ADDRESS, self.machine.peek(FLAG_ADDRESS) & !0x10);
+                }
+                output = format!("Invisible mode is now {}", if force_invis { "forced" } else { "not forced" });
             },
             _ => {
                error_code = Some(ERROR_CODE_UNKNOWN_METACOMMAND);

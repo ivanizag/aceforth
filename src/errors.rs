@@ -1,4 +1,3 @@
-
 pub const ERROR_CODE_NONE: u8 = 255;
 pub const ERROR_CODE_UNKNOWN_METACOMMAND: u8 = 100;
 pub const ERROR_CODE_QUIT: u8 = 101;

@@ -3,9 +3,11 @@ Commands:
     LIST: waits for key on long lists: fixed.
     EDIT: needs multilines input: fixed, all in a single line.
     BEEP: fixed, waiting skiped
+    FORGET: fix, works but sends error 255
     LOAD
     SAVE
     timeouts: max number of cycles, test with ": INF 1 BEGIN 1 + DUP . 0 UNTIL ;"
+    $VIS: defaults on INVIS
 
 Missing:
     INVERSE VIDEO (shift 4), page 12
@@ -14,7 +16,11 @@ Missing:
     FORGET not working ¿?, page 39
     load and save from tape (chapter 14)
     Understanding page 99
+    Skip all Halts
+    $3C2B (FRAMES) has a 32 bit running counter at 50Hz
 
+See:
+    https://codeberg.org/pgimeno/JupiterROMDisassembly/src/branch/master/JupiterACE_ROM_Disassembly.asm
 
 Other:
     miniz_oxide example

@@ -4,13 +4,13 @@ use crate::characters::{ace_to_emited, ace_to_screenshot, unicode_to_ace};
 
 static ROM: &[u8] = include_bytes!("../resources/jupiter ace.rom");
 
-
 const INSCRN_ADDRESS: u16 = 0x3C1E; // Start of the input buffer
 const CURSOR_ADDRESS: u16 = 0x3C20; // Cursor position
 const ENDBUF_ADDRESS: u16 = 0x3C22; // End of the input buffer
 const LHALF_ADDRESS:  u16 = 0x3C24; // End of the output buffer
 const KEYCOD_ADDRESS: u16 = 0x3C26; // Last key pressed
-const ADDRESS_STATIN: u16 = 0x3c28;
+const STATIN_ADDRESS: u16 = 0x3c28; // Status of the input buffer
+pub const FLAG_ADDRESS:   u16 = 0x3c3e; // Flags
 
 pub const END_OF_ROM: u16 = 0x2000;
 const START_OF_SCREEN: u16 = 0x2400;
@@ -26,13 +26,15 @@ const STATIN_ENTER_MASK: u8 = 0b0010_0000;
 pub struct AceMachine {
     ram: [u8; 65536],
     trace_io: bool,
+    pub force_invis: bool,
 }
 
 impl AceMachine {
-    pub fn new(trace_io: bool) -> AceMachine {
+    pub fn new(trace_io: bool, force_invis: bool) -> AceMachine {
         AceMachine {
             ram: [0; 65536],
             trace_io,
+            force_invis,
         }
     }
 
@@ -41,9 +43,9 @@ impl AceMachine {
             self.inject_char(ch);
         }
 
-        let mut statin = self.peek(ADDRESS_STATIN);
+        let mut statin = self.peek(STATIN_ADDRESS);
         statin |= STATIN_ENTER_MASK;
-        self.poke(ADDRESS_STATIN, statin);
+        self.poke(STATIN_ADDRESS, statin);
     }
 
     pub fn inject_key(&mut self, key: u8) {
@@ -196,7 +198,13 @@ impl Machine for AceMachine {
     }
 
     fn poke(&mut self, address: u16, value: u8) {
+        let mut value = value;
         let physical_address = physical_address(address);
+
+        if self.force_invis && physical_address == FLAG_ADDRESS {
+            value |= 0x10; // Set the visible flag always false
+        }
+
         self.ram[physical_address as usize] = value;
     }
 
