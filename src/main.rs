@@ -12,7 +12,7 @@ use runner::Runner;
 
 // Welcome message
 const WELCOME: &str =
-"jaceforth: Jupiter Ace Forth https://github.com/ivanizag/jaceforth";
+"aceforth: Jupiter Ace Forth https://github.com/ivanizag/aceforth";
 
 const INTRO: &str =
 "Enter Jupiter Ace Forth commands. Type $HELP for help, control-C to exit.";
@@ -59,8 +59,8 @@ fn main() {
     let mut pending_input: Option<String> = None;
     loop {
         let readline = match pending_input {
-            Some(input) => editor.readline_with_initial("jaceforth? ", (&input, "")),
-            None => editor.readline("jaceforth> ")
+            Some(input) => editor.readline_with_initial("aceforth? ", (&input, "")),
+            None => editor.readline("aceforth> ")
         };
 
         match readline {

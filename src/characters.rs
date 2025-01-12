@@ -4,8 +4,8 @@
 
     Can be tested as follows:
 
-        jaceforth> : CHARS 256 0 DO I EMIT LOOP ;
-        jaceforth> CHARS
+        aceforth> : CHARS 256 0 DO I EMIT LOOP ;
+        aceforth> CHARS
         CHARS  ▝▘▀▗▐▚▜ ▝▘▀▗
         ▚▜ ▝▘▀▗▐▚▜ ▝▘▀▗▐▚▜ !"#$%&'()*+,-
         ./0123456789:;<=>?@ABCDEFGHIJKLM

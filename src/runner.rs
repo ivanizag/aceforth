@@ -123,7 +123,7 @@ impl Runner {
     }
 
     const METACOMMANDS_HELP: &str = r##"
-Type the same command you would type in the Jupitar ACE prompt.
+Type the same command you would type in the Jupiter ACE prompt.
 
 Additional metacommands are available starting with {prefix}:
   {prefix}HELP: Shows this help
