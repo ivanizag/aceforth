@@ -72,7 +72,7 @@ fn main() {
 
                 pending_input = response.pending_input;
                 if let Some(error_code) = response.error_code {
-                    if error_code == errors::ERROR_CODE_QUIT || error_code == errors::ERROR_CODE_TIMEOUT {
+                    if error_code == errors::ERROR_CODE_QUIT {
                         break;
                     }
                     println!(">>> Error code {}: {}", error_code, errors::error_message(error_code));

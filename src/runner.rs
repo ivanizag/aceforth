@@ -215,6 +215,7 @@ Additional metacommands are available starting with {prefix}:
         let mut output = String::new();
         let mut error_code = None;
 
+        let initial_state = self.save_snapshot_internal();
         let initial_cycle = self.cpu.cycle_count();
 
         // Run up to the query loop again
@@ -237,6 +238,7 @@ Additional metacommands are available starting with {prefix}:
                 } else {
                     output.push_str("Timeout");
                     error_code = Some(ERROR_CODE_TIMEOUT);
+                    let _ = self.load_snapshot_internal(&initial_state);
                     break;
                 }
             }
@@ -305,15 +307,19 @@ Additional metacommands are available starting with {prefix}:
     }
 
     pub fn save_snapshot(&self, filename: &str) -> io::Result<()> {
-        let mut state = self.machine.serialize();
-        state.extend(self.cpu.serialize());
-
+        let mut state = self.save_snapshot_internal();
         for i in 0..state.len() {
             state[i] = state[i].wrapping_sub(INITIAL_SNAPSHOT[i]);
         }
 
         let compressed = compress_to_vec(&state, CompressionLevel::DefaultLevel as u8);
         fs::write(filename, compressed)
+    }
+
+    fn save_snapshot_internal(&self) -> Vec<u8> {
+        let mut state = self.machine.serialize();
+        state.extend(self.cpu.serialize());
+        state
     }
 
     pub fn load_snapshot(&mut self, filename: &str) -> io::Result<()> {
