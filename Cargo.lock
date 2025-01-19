@@ -6,10 +6,17 @@ version = 3
 name = "aceforth"
 version = "0.1.0"
 dependencies = [
+ "aceforthlib",
  "clap",
+ "rustyline",
+]
+
+[[package]]
+name = "aceforthlib"
+version = "0.1.0"
+dependencies = [
  "iz80",
  "miniz_oxide",
- "rustyline",
 ]
 
 [[package]]

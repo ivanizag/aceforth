@@ -1,0 +1,15 @@
+[package]
+name = "aceforth"
+default-run = "aceforth"
+workspace = ".."
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+
+[dependencies]
+aceforthlib = { path = "../aceforthlib" }
+clap = "^2"
+rustyline = "15.0.0"
+

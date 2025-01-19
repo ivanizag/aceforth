@@ -2,7 +2,7 @@ use iz80::Machine;
 
 use crate::characters::{ace_to_emited, ace_to_screenshot, unicode_to_ace};
 
-static ROM: &[u8] = include_bytes!("../resources/jupiter ace.rom");
+static ROM: &[u8] = include_bytes!("../../resources/jupiter ace.rom");
 
 const INSCRN_ADDRESS: u16 = 0x3C1E; // Start of the input buffer
 const CURSOR_ADDRESS: u16 = 0x3C20; // Cursor position

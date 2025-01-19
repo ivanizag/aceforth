@@ -1,18 +1,16 @@
-[package]
-name = "aceforth"
+[workspace]
+members = [
+    "aceforth",
+    "aceforthlib"
+]
+resolver = "2"
+
+[workspace.package]
 version = "0.1.0"
 authors = ["Ivan Izaguirre <ivanizag@gmail.com>"]
 edition = "2021"
 repository = "https://github.com/ivanizag/aceforth"
 
-[dependencies]
-iz80 = "^0.4.2"
-clap = "^2"
-rustyline = "15.0.0"
-miniz_oxide = "0.8.2"
-
-# The profile that 'dist' will build with
 [profile.dist]
 inherits = "release"
 lto = "thin"
-

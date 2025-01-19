@@ -1,0 +1,15 @@
+[package]
+name = "aceforthlib"
+workspace = ".."
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+iz80 = "^0.4.2"
+miniz_oxide = "0.8.2"
+
+
+
+
