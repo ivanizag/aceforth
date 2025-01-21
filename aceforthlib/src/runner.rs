@@ -11,6 +11,7 @@ use crate::ace_machine::FLAG_ADDRESS;
 use crate::ace_machine::MAX_INPUT_BUFFER_SIZE;
 use crate::ace_machine::END_OF_ROM;
 use crate::characters::{ace_to_emited, ace_to_screenshot};
+use crate::display::video_image;
 
 static INITIAL_SNAPSHOT: &[u8] = include_bytes!("../../resources/initialstate.sav");
 
@@ -70,7 +71,11 @@ impl Runner {
         self.machine.poke(FLAG_ADDRESS, self.machine.peek(FLAG_ADDRESS));
     }
 
-   pub fn toggle_trace_rom(&mut self) -> bool{
+    pub fn prepare_with_snapshot(&mut self, snapshot: &[u8]) -> io::Result<()> {
+        self.load_snapshot(snapshot)
+    }
+
+    pub fn toggle_trace_rom(&mut self) -> bool{
         self.trace_rom = !self.trace_rom;
         self.trace_rom
     }
@@ -87,6 +92,10 @@ impl Runner {
 
     pub fn get_screen_as_text(&self) -> String {
         self.machine.get_screen_as_text()
+    }
+
+    pub fn save_screen_image(&self) -> Vec<u8> {
+        video_image(&self.machine)
     }
 
     pub fn execute_command(&mut self, command: &str, timeout_cycles: u64) -> Response {

@@ -9,6 +9,7 @@ repository.workspace = true
 [dependencies]
 iz80 = "^0.4.2"
 miniz_oxide = "0.8.2"
+image = "^0.25.5"
 
 
 

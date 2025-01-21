@@ -3,6 +3,7 @@ extern crate miniz_oxide;
 
 mod ace_machine;
 mod characters;
+mod display;
 mod runner;
 
 

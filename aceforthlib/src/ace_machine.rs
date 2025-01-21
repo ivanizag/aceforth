@@ -19,7 +19,8 @@ const INITIAL_START_OF_INPUT_BUFFER: u16 = 0x26e0;
 const END_OF_SCREEN: u16 = 0x2700;
 pub const MAX_INPUT_BUFFER_SIZE: u16 = END_OF_SCREEN - MINIMAL_END_OF_OUTPUT_BUFFER - 2;
 
-const COLUMNS: u16 = 32;
+pub const COLUMNS: u16 = 32;
+pub const ROWS: u16 = 24;
 
 const STATIN_ENTER_MASK: u8 = 0b0010_0000;
 
@@ -145,6 +146,15 @@ impl AceMachine {
             }
         }
         screen
+    }
+
+    pub fn get_char(&self, col: u16, row: u16) -> u8 {
+        self.ram[(START_OF_SCREEN  + row * COLUMNS + col) as usize]
+    }
+
+    pub fn get_udg(&self, index: u8) -> &[u8] {
+        let pos  = (0x2c00 + index as u16 * 8) as usize;
+        &self.ram[pos..pos+8]
     }
 
     pub fn serialize(&self) -> Vec<u8> {

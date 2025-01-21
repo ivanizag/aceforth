@@ -1,3 +1,6 @@
 /target
+secret.env
+screen.png
 history.txt
-snapshot.sav
+*.sav
+

@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "aceforth",
+    "aceforth", "aceforthgram",
     "aceforthlib"
 ]
 resolver = "2"

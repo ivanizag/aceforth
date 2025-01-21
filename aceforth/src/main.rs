@@ -195,6 +195,13 @@ impl App {
                 let force_invis = self.runner.toggle_invis();
                 println!("Invisible mode is now {}", if force_invis { "forced" } else { "not forced" });
             },
+            "IMAGE" => {
+                let filename = parts.get(1).unwrap_or(&"screen.png");
+                match self.save_screen_image(filename) {
+                    Ok(_) => println!("Screen image saved to {}", filename),
+                    Err(e) => println!("Error saving screen image: {}", e),
+                }
+            },
             _ => {
                 println!("Unknown metacommand: {}", command);
             }
@@ -219,5 +226,9 @@ impl App {
         let data = fs::read(filename)?;
         self.runner.load_snapshot(&data)
     }
-}
 
+    pub fn save_screen_image(&self, filename: &str) -> io::Result<()> {
+        let image = self.runner.save_screen_image();
+        fs::write(filename, image)
+    }
+}
