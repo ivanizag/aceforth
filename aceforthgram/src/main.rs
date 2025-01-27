@@ -1,5 +1,7 @@
 use aceforthlib::GRAPH_CHARS;
-use teloxide::{dispatching::UpdateHandler, prelude::*, types::User, types::InputFile, utils::command::BotCommands};
+use teloxide::{dispatching::UpdateHandler, prelude::*};
+use teloxide::types::{InputFile, User};
+use teloxide::utils::command::BotCommands;
 
 mod app;
 
@@ -32,6 +34,10 @@ enum Command {
     Vis,
     /// Reset the machine.
     Reset,
+    /// Introduction to the bot.
+    Intro,
+    /// Start, same as Intro
+    Start,
 }
 
 fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
@@ -42,7 +48,9 @@ fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>
         .branch(case![Command::Screen].endpoint(screen_command))
         .branch(case![Command::Graphs].endpoint(graphs_command))
         .branch(case![Command::Vis].endpoint(vis_command))
-        .branch(case![Command::Reset].endpoint(reset_command));
+        .branch(case![Command::Reset].endpoint(reset_command))
+        .branch(case![Command::Start].endpoint(intro_command))
+        .branch(case![Command::Intro].endpoint(intro_command));
 
     let message_handler = Update::filter_message()
         .filter_map(|update: Update| update.from().cloned())
@@ -92,5 +100,11 @@ async fn vis_command(bot: Bot, user: User) -> HandlerResult {
 async fn reset_command(bot: Bot, user: User) -> HandlerResult {
     app::reset_command(user.id.0).await;
     bot.send_message(user.id, "Engine restarted").await?;
+    Ok(())
+}
+
+static INTRO: &str = include_str!("../resources/intro.txt");
+async fn intro_command(bot: Bot, user: User) -> HandlerResult {
+    bot.send_message(user.id,INTRO).await?;
     Ok(())
 }

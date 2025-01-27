@@ -1,0 +1,12 @@
+About: Jupiter Ace emulator as a chatbot
+Groups disabled
+
+Commands:
+help - List of metacommands
+screen - Show a screenshot
+graphs - Show the graphical characters supported by the Jupiter Ace
+vis - Toggle the invisible mode
+reset - Return to the initial state
+intro - Show an introduction to the bot and to the Jupiter Ace
+
+

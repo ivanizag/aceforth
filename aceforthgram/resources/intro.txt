@@ -1,0 +1,19 @@
+Welcome to the Jupiter ACE bot
+This bot emulates the Jupiter ACE computer.    
+
+The Jupiter Ace by Jupiter Cantab was a British home computer released in 1982. The Ace differed from other microcomputers of the time in that its programming environment used Forth instead of the more popular BASIC. See https://en.wikipedia.org/wiki/Jupiter_Ace
+
+This bot emulates a separate Jupiter Ace for each convesation. Under the hood, the bot emulates a Z80 processor running the original ROM of the Jupiter Ace. The interruptions used for data entry are skiped and the messages from the conversation are injected in the input buffer. The output is intercepted and sent as bot answers.
+
+There are several limitations compared to a full-fledged emulator. Save and load are not supported and beeps are skipped. Each command is given a maximum execution time. On timeout, the state is rolled back to the situation just before the command execution.
+
+Additional meta-commands are used to control the emulator:
+
+    /help: Display the list of metacommands
+    /screen: Generates a capture of how would be the screen on the Jupiter Ace at that moment
+    /graphs: Show the graphical characters supported by the Jupiter Ace. This is useful to copy paste them as needed as they are not available on current keyboards.
+    /vis: Toggles the invisible mode. By default the Jupiter Ace interpreter copies the input to the output as it is processing the commands. Used as a conversational bot it's a bit messy. By default this copy is disabled, but it can be toggled back with the /vis meta-command.
+    /reset: The state of the emulation is persisted for the session forever. Reset is used to restart from scratch
+    /intro: Show this text
+
+This bot can be used to play with the Forth as used by the Jupiter Ace. A good introduction to learn the basics is the manual that was included with the computer. It's available on the Internet Archive: https://archive.org/details/Jupiter_Ace_Users_Manual_Issue_2_1982_Jupiter_Cantab/page/n11/mode/2up
