@@ -6,9 +6,7 @@ mod characters;
 mod display;
 mod runner;
 
-
-
-pub use runner::Runner as Runner;
-pub use ace_machine::MAX_INPUT_BUFFER_SIZE as MAX_INPUT_BUFFER_SIZE;
+pub use ace_machine::MAX_INPUT_BUFFER_SIZE;
+pub use runner::Runner;
 
 pub const GRAPH_CHARS: &str = "■ ▝ ▘ ▀ ▗ ▐ ▚ ▜ ▙ ▟ ▄ ▛ ▌ ▞ ▖";

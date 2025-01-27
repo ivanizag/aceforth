@@ -1,8 +1,8 @@
 use aceforthlib::GRAPH_CHARS;
 use app::log_command;
-use teloxide::{dispatching::UpdateHandler, prelude::*};
 use teloxide::types::{InputFile, User};
 use teloxide::utils::command::BotCommands;
+use teloxide::{dispatching::UpdateHandler, prelude::*};
 
 mod app;
 
@@ -20,7 +20,7 @@ async fn main() {
         .build()
         .dispatch()
         .await;
-    }
+}
 
 #[derive(BotCommands, Clone)]
 #[command(rename_rule = "lowercase")]
@@ -74,7 +74,8 @@ async fn handle_message(bot: Bot, user: User, text: String) -> HandlerResult {
 }
 
 async fn help_command(bot: Bot, user: User) -> HandlerResult {
-    bot.send_message(user.id, Command::descriptions().to_string()).await?;
+    bot.send_message(user.id, Command::descriptions().to_string())
+        .await?;
     Ok(())
 }
 
@@ -87,7 +88,14 @@ async fn screen_command(bot: Bot, user: User /*, msg: Message*/) -> HandlerResul
 }
 
 async fn graphs_command(bot: Bot, user: User) -> HandlerResult {
-    bot.send_message(user.id, format!("The Jupiter ACE semigraphic characters are: {}", GRAPH_CHARS)).await?;
+    bot.send_message(
+        user.id,
+        format!(
+            "The Jupiter ACE semigraphic characters are: {}",
+            GRAPH_CHARS
+        ),
+    )
+    .await?;
     Ok(())
 }
 
@@ -95,7 +103,14 @@ async fn vis_command(bot: Bot, user: User) -> HandlerResult {
     let mut runner = app::build_runner(user.id.0).await;
     let vis = app::vis_command(&mut runner);
     app::persist_runner(user.id.0, &runner).await;
-    bot.send_message(user.id, format!("Invisible mode is now {}", if vis { "active" } else { "disabled" } )).await?;
+    bot.send_message(
+        user.id,
+        format!(
+            "Invisible mode is now {}",
+            if vis { "active" } else { "disabled" }
+        ),
+    )
+    .await?;
     Ok(())
 }
 
@@ -107,6 +122,6 @@ async fn reset_command(bot: Bot, user: User) -> HandlerResult {
 
 static INTRO: &str = include_str!("../resources/intro.txt");
 async fn intro_command(bot: Bot, user: User) -> HandlerResult {
-    bot.send_message(user.id,INTRO).await?;
+    bot.send_message(user.id, INTRO).await?;
     Ok(())
 }

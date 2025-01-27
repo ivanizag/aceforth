@@ -7,9 +7,9 @@ use miniz_oxide::inflate::decompress_to_vec_with_limit;
 use iz80::*;
 
 use crate::ace_machine::AceMachine;
+use crate::ace_machine::END_OF_ROM;
 use crate::ace_machine::FLAG_ADDRESS;
 use crate::ace_machine::MAX_INPUT_BUFFER_SIZE;
-use crate::ace_machine::END_OF_ROM;
 use crate::characters::{ace_to_emited, ace_to_screenshot};
 use crate::display::video_image;
 
@@ -36,7 +36,6 @@ const BEEP_LOOP_ADDRESS: u16 = 0x0bc1;
 const QUERY_LOOP_ADDRESS: u16 = 0x059b;
 
 impl Runner {
-
     pub const ERROR_CODE_NONE: u8 = 255;
     pub const ERROR_CODE_QUIT: u8 = 101;
     pub const ERROR_CODE_INPUT_BUFFER_OVERFLOW: u8 = 102;
@@ -57,7 +56,6 @@ impl Runner {
     }
 
     pub fn prepare(&mut self) {
-
         let res = self.load_snapshot_internal(INITIAL_SNAPSHOT);
         if res.is_err() {
             println!("Warning: Could not load initial state");
@@ -68,14 +66,15 @@ impl Runner {
         }
 
         // Touch the flags to ensure invis is properly set
-        self.machine.poke(FLAG_ADDRESS, self.machine.peek(FLAG_ADDRESS));
+        self.machine
+            .poke(FLAG_ADDRESS, self.machine.peek(FLAG_ADDRESS));
     }
 
     pub fn prepare_with_snapshot(&mut self, snapshot: &[u8]) -> io::Result<()> {
         self.load_snapshot(snapshot)
     }
 
-    pub fn toggle_trace_rom(&mut self) -> bool{
+    pub fn toggle_trace_rom(&mut self) -> bool {
         self.trace_rom = !self.trace_rom;
         self.trace_rom
     }
@@ -83,9 +82,11 @@ impl Runner {
     pub fn toggle_invis(&mut self) -> bool {
         self.machine.force_invis = !self.machine.force_invis;
         if self.machine.force_invis {
-            self.machine.poke(FLAG_ADDRESS, self.machine.peek(FLAG_ADDRESS) | 0x10);
+            self.machine
+                .poke(FLAG_ADDRESS, self.machine.peek(FLAG_ADDRESS) | 0x10);
         } else {
-            self.machine.poke(FLAG_ADDRESS, self.machine.peek(FLAG_ADDRESS) & !0x10);
+            self.machine
+                .poke(FLAG_ADDRESS, self.machine.peek(FLAG_ADDRESS) & !0x10);
         }
         self.machine.force_invis
     }
@@ -99,10 +100,12 @@ impl Runner {
     }
 
     pub fn execute_command(&mut self, command: &str, timeout_cycles: u64) -> Response {
-
         if command.len() > MAX_INPUT_BUFFER_SIZE as usize {
             return Response {
-                output: format!("Command line too long. The maximum supported size is {}", MAX_INPUT_BUFFER_SIZE),
+                output: format!(
+                    "Command line too long. The maximum supported size is {}",
+                    MAX_INPUT_BUFFER_SIZE
+                ),
                 pending_input: None,
                 error_code: Some(Runner::ERROR_CODE_INPUT_BUFFER_OVERFLOW),
             };
@@ -149,14 +152,15 @@ impl Runner {
                 match pc {
                     ROM_EMIT_CHAR_ADDRESS => {
                         output.push(ace_to_emited(self.cpu.registers().a()));
-                    },
+                    }
 
                     ROM_RAISE_ERROR_ADDRESS => {
                         let a = self.cpu.registers().a();
-                        if a != Runner::ERROR_CODE_NONE { // PURGE raises a no error, so we ignore it
+                        if a != Runner::ERROR_CODE_NONE {
+                            // PURGE raises a no error, so we ignore it
                             error_code = Some(self.cpu.registers().a());
                         }
-                    },
+                    }
 
                     WAIT_FOR_SYNC_HALT_ADDRESS => {
                         // Skip the HALT instruction used to slow down VLIST
@@ -182,8 +186,11 @@ impl Runner {
             if self.trace_rom {
                 match pc {
                     0x0000 => println!("ROM RESET"),
-                    ROM_EMIT_CHAR_ADDRESS => println!("ROM EMIT CHAR {}-{}",
-                        ace_to_screenshot(self.cpu.registers().a()), self.cpu.registers().a()),
+                    ROM_EMIT_CHAR_ADDRESS => println!(
+                        "ROM EMIT CHAR {}-{}",
+                        ace_to_screenshot(self.cpu.registers().a()),
+                        self.cpu.registers().a()
+                    ),
                     //0x0010 => println!("ROM PUSH DE"),
                     //0x0018 => println!("ROM POP DE"),
                     ROM_RAISE_ERROR_ADDRESS => println!("ROM ERROR {}", self.cpu.registers().a()),
@@ -235,8 +242,8 @@ impl Runner {
     }
 
     fn load_snapshot_internal(&mut self, state: &[u8]) -> io::Result<()> {
-        self.machine.deserialize(&state[..65536+1]);
-        self.cpu.deserialize(&state[65536+1..])?;
+        self.machine.deserialize(&state[..65536 + 1]);
+        self.cpu.deserialize(&state[65536 + 1..])?;
         Ok(())
     }
 
@@ -257,7 +264,7 @@ impl Runner {
             12 => "Incomplete definition in dictionary",
             13 => "Word not found (or is internal)",
             14 => "Word unlistable",
-     
+
             // Additional error codes
             Runner::ERROR_CODE_NONE => "No error",
             Runner::ERROR_CODE_INPUT_BUFFER_OVERFLOW => "Input buffer overflow",
@@ -266,5 +273,4 @@ impl Runner {
             _ => "Unknown error",
         }
     }
-    
 }

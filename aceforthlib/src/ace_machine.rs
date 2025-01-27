@@ -7,10 +7,10 @@ static ROM: &[u8] = include_bytes!("../../resources/jupiter ace.rom");
 const INSCRN_ADDRESS: u16 = 0x3C1E; // Start of the input buffer
 const CURSOR_ADDRESS: u16 = 0x3C20; // Cursor position
 const ENDBUF_ADDRESS: u16 = 0x3C22; // End of the input buffer
-const LHALF_ADDRESS:  u16 = 0x3C24; // End of the output buffer
+const LHALF_ADDRESS: u16 = 0x3C24; // End of the output buffer
 const KEYCOD_ADDRESS: u16 = 0x3C26; // Last key pressed
 const STATIN_ADDRESS: u16 = 0x3c28; // Status of the input buffer
-pub const FLAG_ADDRESS:   u16 = 0x3c3e; // Flags
+pub const FLAG_ADDRESS: u16 = 0x3c3e; // Flags
 
 pub const END_OF_ROM: u16 = 0x2000;
 const START_OF_SCREEN: u16 = 0x2400;
@@ -72,9 +72,9 @@ impl AceMachine {
 
             // Scroll the screen up one line
             for i in START_OF_SCREEN..(END_OF_SCREEN - COLUMNS) {
-                self.poke(i, self.peek(i+32));
+                self.poke(i, self.peek(i + 32));
             }
-            for i in (END_OF_SCREEN-32)..END_OF_SCREEN {
+            for i in (END_OF_SCREEN - 32)..END_OF_SCREEN {
                 self.poke(i, 0x20);
             }
 
@@ -123,11 +123,11 @@ impl AceMachine {
             self.poke(i, 0x20);
         }
         self.poke16(INSCRN_ADDRESS, INITIAL_START_OF_INPUT_BUFFER);
-        self.poke16(CURSOR_ADDRESS, INITIAL_START_OF_INPUT_BUFFER+1);
-        self.poke16(ENDBUF_ADDRESS, INITIAL_START_OF_INPUT_BUFFER+2);
+        self.poke16(CURSOR_ADDRESS, INITIAL_START_OF_INPUT_BUFFER + 1);
+        self.poke16(ENDBUF_ADDRESS, INITIAL_START_OF_INPUT_BUFFER + 2);
         self.poke16(LHALF_ADDRESS, INITIAL_START_OF_INPUT_BUFFER);
         self.poke(INITIAL_START_OF_INPUT_BUFFER, 0x00);
-        self.poke(INITIAL_START_OF_INPUT_BUFFER+1, 0x97); // Cursor symbol
+        self.poke(INITIAL_START_OF_INPUT_BUFFER + 1, 0x97); // Cursor symbol
 
         if command.is_empty() {
             None
@@ -138,7 +138,7 @@ impl AceMachine {
 
     pub fn get_screen_as_text(&self) -> String {
         let mut screen = String::new();
-        for i in 0..(24*32) {
+        for i in 0..(24 * 32) {
             let c = self.ram[i + START_OF_SCREEN as usize];
             screen.push_str(&ace_to_screenshot(c));
             if i % 32 == 31 {
@@ -149,23 +149,23 @@ impl AceMachine {
     }
 
     pub fn get_char(&self, col: u16, row: u16) -> u8 {
-        self.ram[(START_OF_SCREEN  + row * COLUMNS + col) as usize]
+        self.ram[(START_OF_SCREEN + row * COLUMNS + col) as usize]
     }
 
     pub fn get_udg(&self, index: u8) -> &[u8] {
-        let pos  = (0x2c00 + index as u16 * 8) as usize;
-        &self.ram[pos..pos+8]
+        let pos = (0x2c00 + index as u16 * 8) as usize;
+        &self.ram[pos..pos + 8]
     }
 
     pub fn serialize(&self) -> Vec<u8> {
         let mut data = self.ram.to_vec();
-        data.push(if self.force_invis {1} else {0} );
+        data.push(if self.force_invis { 1 } else { 0 });
         data
     }
 
     pub fn deserialize(&mut self, data: &[u8]) {
-        self.ram.clone_from_slice(&data[0..data.len()-1]);
-        self.force_invis = data[data.len()-1] != 0;
+        self.ram.clone_from_slice(&data[0..data.len() - 1]);
+        self.force_invis = data[data.len() - 1] != 0;
     }
 }
 
@@ -174,13 +174,13 @@ Memory map (from https://k1.spdns.de/Vintage/Sinclair/80/Jupiter%20Ace/ROMs/memo
     0000-2000   8 kB ROM: ACE OS and Forth Interpreter/Compiler
     2000-2800   1 kB video RAM. actually 2 mirrored blocks 2000-2400-2800.
         2000-2300 Video memory, 768 bytes. 32 x 24 Display (used by the video system)
-        2300-2400 Cassette Header Information (256 bytes)  
+        2300-2400 Cassette Header Information (256 bytes)
         2400-2700 Video memory, 768 bytes. 32 x 24 Display (used by the CPU)
             Bits 6-0 address character in the Character Definitions Table
             Bit 7 indicates inverse (black on white) text.
         2700-2800 PAD. (work space used by Forth)
     2800-3000   Character Definition Table. actually 2 mirrored blocks 2800-2C00-3000.
-        2800-2C00 1 kB Character Definition Table, 128 x 8 bytes (used by video system) 
+        2800-2C00 1 kB Character Definition Table, 128 x 8 bytes (used by video system)
         2C00-3000 1 kB Character Definition Table, 128 x 8 bytes (used by the CPU)
     3000-4000   User Program. actually 4 mirrored blocks 3000-3400-3800-3C00-4000.
         3000-3400 Unused.
@@ -198,13 +198,13 @@ fn physical_address(address: u16) -> u16 {
         0x3000..0x3400 => address + 0xc00, // First copy of user program
         0x3400..0x3800 => address + 0x800, // Second copy of user program
         0x3800..0x3c00 => address + 0x400, // Third copy of user program
-        _ => address
+        _ => address,
     }
 }
 impl Machine for AceMachine {
     fn peek(&self, address: u16) -> u8 {
         if address < ROM.len() as u16 {
-            return ROM[address as usize]
+            return ROM[address as usize];
         }
         let physical_address = physical_address(address);
         self.ram[physical_address as usize]

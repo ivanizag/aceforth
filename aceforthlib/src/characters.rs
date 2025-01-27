@@ -14,8 +14,8 @@
         ▞▖█▙▟▄▛▌▞▖█▙▟▄▛▌▞▖ !"#$%&'()*+,-
         ./0123456789:;<=>?@ABCDEFGHIJKLM
         NOPQRSTUVWXYZ[\]^_£abcdefghijklm
-        nopqrstuvwxyz{|}~© OK  
-        
+        nopqrstuvwxyz{|}~© OK
+
     On the screenshot view, the characters from 0xc0 to 0xff are displayed inverted with ANSI codes.
 */
 

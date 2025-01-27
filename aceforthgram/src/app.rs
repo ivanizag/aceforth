@@ -1,6 +1,6 @@
+use aceforthlib::Runner;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-use aceforthlib::Runner;
 
 fn filename(user_id: u64) -> String {
     format!("{}.sav", user_id)
@@ -44,7 +44,11 @@ pub fn execute(runner: &mut Runner, commands: &str) -> Vec<String> {
         output.push(response.output);
 
         if let Some(error_code) = response.error_code {
-            output.push(format!(">>> Error code {}: {}", error_code, Runner::error_message(error_code)));
+            output.push(format!(
+                ">>> Error code {}: {}",
+                error_code,
+                Runner::error_message(error_code)
+            ));
         }
 
         if let Some(pending_input) = response.pending_input {
@@ -60,7 +64,7 @@ pub fn execute(runner: &mut Runner, commands: &str) -> Vec<String> {
 
 pub fn screen_command(runner: &Runner) -> Vec<u8> {
     runner.save_screen_image()
-}   
+}
 
 pub fn vis_command(runner: &mut Runner) -> bool {
     runner.toggle_invis()
@@ -74,7 +78,8 @@ pub async fn log_command(name: &str, user_id: u64, text: &str) {
     let file = fs::OpenOptions::new()
         .write(true)
         .append(true)
-        .open(filename_log(user_id)).await;
+        .open(filename_log(user_id))
+        .await;
 
     match file {
         Ok(mut file) => {
