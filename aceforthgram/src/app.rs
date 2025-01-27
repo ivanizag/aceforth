@@ -1,8 +1,13 @@
 use tokio::fs;
+use tokio::io::AsyncWriteExt;
 use aceforthlib::Runner;
 
 fn filename(user_id: u64) -> String {
     format!("{}.sav", user_id)
+}
+
+fn filename_log(user_id: u64) -> String {
+    format!("{}.log", user_id)
 }
 
 pub async fn build_runner(user_id: u64) -> Runner {
@@ -65,3 +70,21 @@ pub async fn reset_command(user_id: u64) {
     let _ = fs::remove_file(filename(user_id)).await;
 }
 
+pub async fn log_command(name: &str, user_id: u64, text: &str) {
+    let file = fs::OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(filename_log(user_id)).await;
+
+    match file {
+        Ok(mut file) => {
+            let log = format!("{}\n", text);
+            let _ = file.write_all(log.as_bytes()).await;
+        }
+        Err(_) => {
+            let text = format!("{}\n{}\n", name, text);
+            let _ = fs::write(filename_log(user_id), text).await;
+            return;
+        }
+    }
+}

@@ -1,4 +1,5 @@
 use aceforthlib::GRAPH_CHARS;
+use app::log_command;
 use teloxide::{dispatching::UpdateHandler, prelude::*};
 use teloxide::types::{InputFile, User};
 use teloxide::utils::command::BotCommands;
@@ -61,6 +62,7 @@ fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>
 }
 
 async fn handle_message(bot: Bot, user: User, text: String) -> HandlerResult {
+    log_command(&user.full_name(), user.id.0, &text).await;
     let mut runner = app::build_runner(user.id.0).await;
     let answer = app::execute(&mut runner, &text);
     app::persist_runner(user.id.0, &runner).await;
