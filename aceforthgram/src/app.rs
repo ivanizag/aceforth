@@ -1,14 +1,16 @@
-use std::fs;
+use tokio::fs;
 use aceforthlib::Runner;
 
 fn filename(user_id: u64) -> String {
     format!("{}.sav", user_id)
 }
 
-pub fn build_runner(user_id: u64) -> Runner {
+pub async fn build_runner(user_id: u64) -> Runner {
     let mut runner = Runner::new(false, false, false);
 
-    let snapshot = match fs::read(filename(user_id)) {
+    let content = fs::read(filename(user_id)).await;
+
+    let snapshot = match content {
         Ok(data) => data,
         Err(_) => {
             runner.prepare();
@@ -22,13 +24,12 @@ pub fn build_runner(user_id: u64) -> Runner {
     runner
 }
 
-pub fn prepare_and_execute(user_id: u64, commands: &str) -> Vec<String> {
-    let mut runner = build_runner(user_id);
-    let output = execute(&mut runner, commands);
-
+pub async fn persist_runner(user_id: u64, runner: &Runner) {
     let snapshot = runner.save_snapshot();
-    fs::write(filename(user_id), snapshot).unwrap();
-    output
+    let result = fs::write(filename(user_id), snapshot).await;
+    if let Err(e) = result {
+        eprintln!("Error saving snapshot: {}", e);
+    }
 }
 
 pub fn execute(runner: &mut Runner, commands: &str) -> Vec<String> {
@@ -52,12 +53,15 @@ pub fn execute(runner: &mut Runner, commands: &str) -> Vec<String> {
     output
 }
 
-pub fn screen_command(user_id: u64) -> String {
-    let runner = build_runner(user_id);
-    runner.get_screen_as_text()
+pub fn screen_command(runner: &Runner) -> Vec<u8> {
+    runner.save_screen_image()
 }   
 
-pub fn reset_command(user_id: u64) {
-    let _ = fs::remove_file(filename(user_id));
+pub fn vis_command(runner: &mut Runner) -> bool {
+    runner.toggle_invis()
+}
+
+pub async fn reset_command(user_id: u64) {
+    let _ = fs::remove_file(filename(user_id)).await;
 }
 

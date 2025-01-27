@@ -1,5 +1,5 @@
 use aceforthlib::GRAPH_CHARS;
-use teloxide::{dispatching::UpdateHandler, prelude::*, types::User, utils::command::BotCommands};
+use teloxide::{dispatching::UpdateHandler, prelude::*, types::User, types::InputFile, utils::command::BotCommands};
 
 mod app;
 
@@ -41,6 +41,7 @@ fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>
         .branch(case![Command::Help].endpoint(help_command))
         .branch(case![Command::Screen].endpoint(screen_command))
         .branch(case![Command::Graphs].endpoint(graphs_command))
+        .branch(case![Command::Vis].endpoint(vis_command))
         .branch(case![Command::Reset].endpoint(reset_command));
 
     let message_handler = Update::filter_message()
@@ -52,7 +53,13 @@ fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>>
 }
 
 async fn handle_message(bot: Bot, user: User, text: String) -> HandlerResult {
-    bot.send_message(user.id, app::prepare_and_execute(user.id.0, &text).join("\n")).await?;
+    let mut runner = app::build_runner(user.id.0).await;
+    let answer = app::execute(&mut runner, &text);
+    app::persist_runner(user.id.0, &runner).await;
+
+    if !answer.is_empty() {
+        bot.send_message(user.id, answer.join("\n")).await?;
+    }
     Ok(())
 }
 
@@ -62,7 +69,10 @@ async fn help_command(bot: Bot, user: User) -> HandlerResult {
 }
 
 async fn screen_command(bot: Bot, user: User /*, msg: Message*/) -> HandlerResult {
-    bot.send_message(user.id, app::screen_command(user.id.0)).await?;
+    let runner = app::build_runner(user.id.0).await;
+    let png = app::screen_command(&runner);
+    let photo = InputFile::memory(png);
+    bot.send_photo(user.id, photo).await?;
     Ok(())
 }
 
@@ -71,8 +81,16 @@ async fn graphs_command(bot: Bot, user: User) -> HandlerResult {
     Ok(())
 }
 
+async fn vis_command(bot: Bot, user: User) -> HandlerResult {
+    let mut runner = app::build_runner(user.id.0).await;
+    let vis = app::vis_command(&mut runner);
+    app::persist_runner(user.id.0, &runner).await;
+    bot.send_message(user.id, format!("Invisible mode is now {}", if vis { "active" } else { "disabled" } )).await?;
+    Ok(())
+}
+
 async fn reset_command(bot: Bot, user: User) -> HandlerResult {
-    app::reset_command(user.id.0);
+    app::reset_command(user.id.0).await;
     bot.send_message(user.id, "Engine restarted").await?;
     Ok(())
 }

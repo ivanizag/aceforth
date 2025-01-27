@@ -26,11 +26,12 @@ Additional metacommands are available starting with {prefix}:
   {prefix}SCREENSHOT: Shows the current screen contents
   {prefix}SCREEN: Toggles screen dumping
   {prefix}TRACE: Toggles ROM tracing
+  {previx}IMAGE [filename]: Saves a PNG image of the screen
   {prefix}SAVE [filename]: Saves a snapshot to a file
   {prefix}LOAD [filename]: Loads a snapshot from a file
   {prefix}GRAPHS: Show the Jupiter Ace graphical characters for easy copy-pasting.
   {prefix}VIS: Toggles invisible mode, Overwrites the VIS and INVIS words
-
+  {prefix}BUILDSNAP: (internal) Prepare a new base snapshot
 "##;
 
 fn main() {
@@ -202,6 +203,9 @@ impl App {
                     Err(e) => println!("Error saving screen image: {}", e),
                 }
             },
+            "BUILDSNAP" => {
+                self.save_snapshot_internal();
+            },
             _ => {
                 println!("Unknown metacommand: {}", command);
             }
@@ -227,6 +231,11 @@ impl App {
         self.runner.load_snapshot(&data)
     }
 
+    pub fn save_snapshot_internal(&mut self) {
+        let state = self.runner.save_snapshot_internal();
+        fs::write("initialstate.sav", state).unwrap();
+        println!("Snapshot saved to initialstate.sav");
+    }
     pub fn save_screen_image(&self, filename: &str) -> io::Result<()> {
         let image = self.runner.save_screen_image();
         fs::write(filename, image)

@@ -213,7 +213,7 @@ impl Runner {
         compress_to_vec(&state, CompressionLevel::DefaultLevel as u8)
     }
 
-    fn save_snapshot_internal(&self) -> Vec<u8> {
+    pub fn save_snapshot_internal(&self) -> Vec<u8> {
         let mut state = self.machine.serialize();
         state.extend(self.cpu.serialize());
         state
@@ -235,8 +235,8 @@ impl Runner {
     }
 
     fn load_snapshot_internal(&mut self, state: &[u8]) -> io::Result<()> {
-        self.machine.deserialize(&state[..65536]);
-        self.cpu.deserialize(&state[65536..])?;
+        self.machine.deserialize(&state[..65536+1]);
+        self.cpu.deserialize(&state[65536+1..])?;
         Ok(())
     }
 

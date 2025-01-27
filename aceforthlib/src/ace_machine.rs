@@ -158,11 +158,14 @@ impl AceMachine {
     }
 
     pub fn serialize(&self) -> Vec<u8> {
-        self.ram.to_vec()
+        let mut data = self.ram.to_vec();
+        data.push(if self.force_invis {1} else {0} );
+        data
     }
 
     pub fn deserialize(&mut self, data: &[u8]) {
-        self.ram.copy_from_slice(data);
+        self.ram.clone_from_slice(&data[0..data.len()-1]);
+        self.force_invis = data[data.len()-1] != 0;
     }
 }
 
