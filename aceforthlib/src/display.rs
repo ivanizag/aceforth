@@ -10,8 +10,12 @@ use crate::ace_machine::ROWS;
 const SCREEN_WIDTH: u32 = 256;
 const SCREEN_HEIGHT: u32 = 192;
 
-pub fn video_image(ace_machine: &AceMachine) -> Vec<u8> {
-    let mut fb = ImageBuffer::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+pub fn video_image(ace_machine: &AceMachine, scanlines: bool) -> Vec<u8> {
+    let mut fb = if scanlines {
+        ImageBuffer::new(SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2)
+    } else {
+        ImageBuffer::new(SCREEN_WIDTH, SCREEN_HEIGHT)
+    };
 
     for x in 0..COLUMNS {
         for y in 0..ROWS {
@@ -27,11 +31,25 @@ pub fn video_image(ace_machine: &AceMachine) -> Vec<u8> {
                 }
                 for i in (0..8).rev() {
                     let pixel = if line & 1 == 0 { 0_u8 } else { 255_u8 };
-                    fb.put_pixel(
-                        (8 * x + i) as u32,
-                        8 * y as u32 + j as u32,
-                        Rgb([pixel, pixel, pixel]),
-                    );
+
+                    if scanlines {
+                        fb.put_pixel(
+                            (8 * x + i) as u32 * 2,
+                            (8 * y as u32 + j as u32) * 2,
+                            Rgb([pixel, pixel, pixel]),
+                        );
+                        fb.put_pixel(
+                            (8 * x + i) as u32 * 2 + 1,
+                            (8 * y as u32 + j as u32) * 2,
+                            Rgb([pixel, pixel, pixel]),
+                        );
+                    } else {
+                        fb.put_pixel(
+                            (8 * x + i) as u32,
+                            8 * y as u32 + j as u32,
+                            Rgb([pixel, pixel, pixel]),
+                        );
+                    } 
                     line >>= 1;
                 }
             }

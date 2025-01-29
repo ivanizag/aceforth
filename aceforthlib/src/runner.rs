@@ -95,8 +95,8 @@ impl Runner {
         self.machine.get_screen_as_text()
     }
 
-    pub fn save_screen_image(&self) -> Vec<u8> {
-        video_image(&self.machine)
+    pub fn save_screen_image(&self, scanlines: bool) -> Vec<u8> {
+        video_image(&self.machine, scanlines)
     }
 
     pub fn execute_command(&mut self, command: &str, timeout_cycles: u64) -> Response {

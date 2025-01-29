@@ -1,13 +1,22 @@
+use std::env;
+use std::path::Path;
+
 use aceforthlib::Runner;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
 fn filename(user_id: u64) -> String {
-    format!("{}.sav", user_id)
+    let folder = env::var("SNAPSHOTS_PATH").unwrap_or(".".to_string());
+    let path = Path::new(&folder);
+    let full_path =path.join(format!("{}.sav", user_id));
+    full_path.to_str().unwrap().to_string()
 }
 
 fn filename_log(user_id: u64) -> String {
-    format!("{}.log", user_id)
+    let folder = env::var("LOGS_PATH").unwrap_or(".".to_string());
+    let path = Path::new(&folder);
+    let full_path =path.join(format!("{}.log", user_id));
+    full_path.to_str().unwrap().to_string()
 }
 
 pub async fn build_runner(user_id: u64) -> Runner {
@@ -63,7 +72,7 @@ pub fn execute(runner: &mut Runner, commands: &str) -> Vec<String> {
 }
 
 pub fn screen_command(runner: &Runner) -> Vec<u8> {
-    runner.save_screen_image()
+    runner.save_screen_image(true /* scanlines */)
 }
 
 pub fn vis_command(runner: &mut Runner) -> bool {

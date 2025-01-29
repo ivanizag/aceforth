@@ -3,7 +3,7 @@ This bot emulates the Jupiter ACE computer.
 
 The Jupiter Ace by Jupiter Cantab was a British home computer released in 1982. The Ace differed from other microcomputers of the time in that its programming environment used Forth instead of the more popular BASIC. See https://en.wikipedia.org/wiki/Jupiter_Ace
 
-This bot emulates a separate Jupiter Ace for each convesation. Under the hood, the bot emulates a Z80 processor running the original ROM of the Jupiter Ace. The interruptions used for data entry are skiped and the messages from the conversation are injected in the input buffer. The output is intercepted and sent as bot answers.
+This bot emulates a separate Jupiter Ace for each conversation. Under the hood, the bot emulates a Z80 processor running the original ROM of the Jupiter Ace. The interruptions used for data entry are skiped and the messages from the conversation are injected in the input buffer. The output is intercepted and sent as bot answers.
 
 There are several limitations compared to a full-fledged emulator. Save and load are not supported and beeps are skipped. Each command is given a maximum execution time. On timeout, the state is rolled back to the situation just before the command execution.
 
@@ -17,3 +17,5 @@ Additional meta-commands are used to control the emulator:
     /intro: Show this text
 
 This bot can be used to play with the Forth as used by the Jupiter Ace. A good introduction to learn the basics is the manual that was included with the computer. It's available on the Internet Archive: https://archive.org/details/Jupiter_Ace_Users_Manual_Issue_2_1982_Jupiter_Cantab/page/n11/mode/2up
+
+You can start using Forth with a simple addition typing "1 1 + .", and don't forget the spaces.

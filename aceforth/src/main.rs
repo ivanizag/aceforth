@@ -258,7 +258,7 @@ impl App {
         println!("Snapshot saved to initialstate.sav");
     }
     pub fn save_screen_image(&self, filename: &str) -> io::Result<()> {
-        let image = self.runner.save_screen_image();
+        let image = self.runner.save_screen_image(false /* scanlines */);
         fs::write(filename, image)
     }
 }
